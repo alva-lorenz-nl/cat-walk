@@ -110,14 +110,22 @@
       from { opacity: 0; transform: translateY(6px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    /* 竖屏移动端适配：将文字对话框移至画面外部（默认下方，点击可在下方/上方切换） */
+    /* 竖屏移动端适配：将文字对话框固定在画面上方外部，彻底不遮挡游戏画面 */
     @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+      .header {
+        position: relative;
+        top: 0;
+        margin-bottom: 8px;
+      }
+      .game-wrapper {
+        margin-top: 10px;
+      }
       .dialog-box {
-        top: calc(100% + 12px);
-        bottom: auto;
+        top: auto;
+        bottom: calc(100% + 10px);
         width: 100%;
         max-width: 100%;
-        max-height: 34vh;
+        max-height: 28vh;
         padding: 10px 14px;
         font-size: 13px;
         line-height: 1.6;
@@ -126,9 +134,9 @@
         border: 2px solid #7d6b5b;
         box-shadow: 0 10px 30px rgba(0,0,0,0.85);
       }
-      .dialog-box.pos-top {
-        top: auto;
-        bottom: calc(100% + 12px);
+      .dialog-box.pos-bottom {
+        top: calc(100% + 12px);
+        bottom: auto;
       }
     }
     .controls {
@@ -874,7 +882,7 @@ let catAction = 'idle';
     }
 
 dialog.addEventListener('click', () => {
-      dialog.classList.toggle('pos-top');
+      dialog.classList.toggle('pos-bottom');
     });
 
     function showDialog(text, opts) {
