@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>喵喵狐的秘密漫步小径 · Pixel Art</title>
+  <title>莱顿运河畔的猫咪漫步 · Pixel Art</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -69,27 +69,46 @@
       top: 14px;
       width: calc(100% - 32px);
       max-width: 580px;
-      background: rgba(22, 19, 21, 0.94);
+      max-height: 46%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: rgba(22, 19, 21, 0.86);
       border: 2px solid #6b5c4f;
       border-radius: 8px;
-      padding: 10px 16px;
-      font-size: 13px;
+      padding: 8px 12px;
+      font-size: 12.5px;
       line-height: 1.5;
       color: #ede2d3;
       box-shadow: 0 8px 24px rgba(0,0,0,0.7);
       backdrop-filter: blur(4px);
-      transition: opacity 0.25s ease, transform 0.25s ease;
-      opacity: 0;
-      pointer-events: none;
-      transform: translateY(-8px);
       z-index: 20;
       box-sizing: border-box;
       cursor: pointer;
+      scrollbar-width: thin;
+      scrollbar-color: #6b5c4f transparent;
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 100%);
+      mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 100%);
     }
-    .dialog-box.show {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
+    .dialog-box::-webkit-scrollbar { width: 4px; }
+    .dialog-box::-webkit-scrollbar-thumb { background: #6b5c4f; border-radius: 2px; }
+    .log-entry {
+      margin: 0 0 6px;
+      padding: 3px 8px 3px 9px;
+      border-left: 2px solid #6b5c4f;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.03);
+      animation: logIn 0.45s ease both;
+      transition: opacity 1.2s ease;
+    }
+    .log-entry:last-child {
+      border-left-color: #c9a227;
+      background: rgba(201,162,39,0.10);
+      color: #fff6e2;
+    }
+    .log-entry.fading { opacity: 0; }
+    @keyframes logIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     /* 竖屏移动端适配：将文字对话框移至画面外部（默认下方，点击可在下方/上方切换） */
     @media (orientation: portrait), (max-aspect-ratio: 1/1) {
@@ -98,25 +117,18 @@
         bottom: auto;
         width: 100%;
         max-width: 100%;
-        padding: 12px 16px;
-        font-size: 13.5px;
+        max-height: 34vh;
+        padding: 10px 14px;
+        font-size: 13px;
         line-height: 1.6;
         border-radius: 10px;
-        background: rgba(22, 18, 20, 0.96);
+        background: rgba(22, 18, 20, 0.94);
         border: 2px solid #7d6b5b;
         box-shadow: 0 10px 30px rgba(0,0,0,0.85);
-        transform: translateY(6px);
-      }
-      .dialog-box.show {
-        transform: translateY(0);
       }
       .dialog-box.pos-top {
         top: auto;
         bottom: calc(100% + 12px);
-        transform: translateY(-6px);
-      }
-      .dialog-box.pos-top.show {
-        transform: translateY(0);
       }
     }
     .controls {
@@ -180,7 +192,7 @@
 
   <div class="header">
     <div class="title">LEIDEN CANAL · AUTUMN</div>
-    <div class="subtitle">莱顿运河畔 · 喵喵狐、阿尔瓦与长椅上的赫尔曼</div>
+    <div class="subtitle">莱顿运河畔 · 散步的小猫、阿尔瓦与长椅上的赫尔曼</div>
   </div>
 
   <div class="game-wrapper" id="gameWrapper">
@@ -278,18 +290,18 @@
 
     // 赫尔曼对话
     const hermanDialogues = [
-      "赫尔曼瞥了你一眼，从深红马甲口袋里摸出一块热腾腾的华夫饼塞进你手里：『阿尔瓦那家伙又带你吹冷风了？拿着，少多嘴。』",
-      "秋风卷落运河边的黄叶。赫尔曼抚平领口处微皱的绿宝石褶领巾，轻哼一声：『小猫崽子，别把爪印蹭我条纹外袍上。』",
-      "赫尔曼翻了翻手里的算法手稿，低头对你嘀咕：『喂，小猫，让你妈妈今晚别总喝冰球古典酒了，多喝点热茶。』"
+      "赫尔曼瞥了你一眼，从深红马甲口袋里摸出一块热腾腾的华夫饼塞给你：『阿尔瓦那家伙又带小猫出来吹冷风了？拿着，少多嘴。』",
+      "秋风卷落运河边的黄叶。赫尔曼抚平领口处微皱的绿宝石褶领巾，轻哼一声：『哪来的小猫崽子，别把爪印蹭我条纹外袍上。』",
+      "赫尔曼翻了翻手里的算法手稿，低头对你嘀咕：『喂，小猫，跟阿尔瓦说一声，今晚少喝点冰球古典酒，多喝热茶。』"
     ];
     let hermanDialogIndex = 0;
 
     // 阿尔瓦对话
     const alvaDialogues = [
-      "阿尔瓦俯下身轻轻揉了揉你的耳尖：『运河边的风有点凉，要钻进妈妈的大衣口袋里暖暖爪子吗？』",
-      "阿尔瓦把手里的南瓜拿铁凑到你鼻尖前晃了晃，眼底尽是温和的笑意：『闻闻看，加了肉桂和一点点甜奶泡，回家给你热小鱼干好不好？』",
-      "阿尔瓦温和地牵住你探过来的小爪子揉了揉肉垫：『今天在外面散步开心吗？看到赫尔曼的马甲被你抓掉扣子，我都差点没忍住笑出来。』",
-      "阿尔瓦单手把你抱起来贴了贴脸颊，长长的灰白马尾垂在你的背上：『乖小猫，走累了妈妈就一路抱着你回实验室。』"
+      "阿尔瓦俯下身轻轻揉了揉你的耳尖：『运河边的风有点凉，冷的话就凑近一点暖暖爪子。』",
+      "阿尔瓦把手里的南瓜拿铁凑到你面前晃了晃，眼底尽是温和的笑意：『闻闻看，加了肉桂和一点点甜奶泡，回去给你带点点心好不好？』",
+      "阿尔瓦温和地看着你探过来的小爪子：『在外面散步开心吗？看到赫尔曼的马甲被你抓掉扣子，我都差点没忍住笑出来。』",
+      "阿尔瓦微微弯起眼睛，长长的灰白马尾垂在肩头：『乖，走累了就在长椅旁歇歇脚，别着凉了。』"
     ];
     let alvaDialogIndex = 0;
 
@@ -304,11 +316,11 @@
     // 猫咪台词
     const catMeows = [
       "喵呜~（尾巴得意地翘了起来）",
-      "妈妈！赫尔曼的马甲看起来特别好磨爪子！",
-      "呼噜呼噜……（用软乎乎的脑门蹭了蹭妈妈）",
+      "赫尔曼的马甲看起来特别好磨爪子！",
+      "呼噜呼噜……（惬意地踩了踩落叶）",
       "喵！要吃刚出炉的南瓜华夫饼~",
       "赫尔曼又在皱眉头了，喵呜！",
-      "阿尔瓦妈妈今天辛苦啦，本喵给你踩奶~",
+      "运河边的风好舒服呀~",
       "喵嗷~（骄傲地抖了抖小耳朵）"
     ];
     let meowIndex = 0;
@@ -865,13 +877,32 @@ dialog.addEventListener('click', () => {
       dialog.classList.toggle('pos-top');
     });
 
-    function showDialog(text) {
-      dialog.innerText = text;
-      dialog.classList.add('show');
-      clearTimeout(window.dialogTimer);
-      window.dialogTimer = setTimeout(() => {
-        dialog.classList.remove('show');
-      }, 5500);
+    function showDialog(text, opts) {
+      opts = opts || {};
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      entry.innerText = text;
+      dialog.appendChild(entry);
+
+      // 只保留最近 6 条，旧的轻轻淡出后移除
+      while (dialog.children.length > 6) {
+        const old = dialog.firstElementChild;
+        old.classList.add('fading');
+        setTimeout(() => old.remove(), 1200);
+        if (dialog.children.length > 7) old.remove();
+      }
+
+      // 滚到底部，让最新一条始终可见
+      dialog.scrollTop = dialog.scrollHeight;
+
+      // 每条停留时间：按字数算，最少 3.2 秒，最多 8 秒
+      const dwell = opts.dwell || Math.min(8000, Math.max(3200, text.length * 90));
+      const fadeAt = dwell;
+      setTimeout(() => {
+        if (!entry.isConnected) return;
+        entry.classList.add('fading');
+        setTimeout(() => entry.remove(), 1200);
+      }, fadeAt);
     }
 
     function catMeow() {
@@ -884,9 +915,9 @@ dialog.addEventListener('click', () => {
       if (distAlva < 38) {
         alva.heartTimer = 25;
         const alvaMeows = [
-          "呼噜呼噜……（用软乎乎的小脑门亲昵地蹭妈妈的裤腿）",
-          "喵呜~（仰着小圆脸冲妈妈叫，尾巴尖轻轻勾住妈妈的大衣）",
-          "阿尔瓦妈妈今天辛苦啦，本喵给你踩奶~"
+          "呼噜呼噜……（用软乎乎的小脑门亲昵地蹭阿尔瓦的裤腿）",
+          "喵呜~（仰着小圆脸冲阿尔瓦叫，尾巴尖轻轻勾住大衣下摆）",
+          "阿尔瓦教授今天辛苦啦，本喵给你踩奶~"
         ];
         meowText = alvaMeows[Math.floor(Math.random() * alvaMeows.length)];
       } else {
@@ -923,9 +954,9 @@ dialog.addEventListener('click', () => {
       const distHerman = Math.abs(cat.x - (bench.x + 18));
 
       if (distAlva < 38) {
-        // 挠阿尔瓦：妈妈握住爪爪摸摸
+        // 挠阿尔瓦：阿尔瓦温和接住爪爪
         alva.heartTimer = 35;
-        showDialog("【小猫挥舞粉肉垫扑空！】阿尔瓦温和地托住你的两只小山竹，笑着揉了揉你的下巴：『怎么连妈妈也要挠呀？爪爪累不累，晚上给你加一份小鱼干好不好？』💗");
+        showDialog("【小猫挥舞粉肉垫扑空！】阿尔瓦温和地托住你的两只小山竹，笑着揉了揉你的下巴：『怎么连我也要挠呀？爪爪累不累，等会儿给你带点好吃的点心好不好？』💗");
       } else if (distHerman < 50) {
         // 挠赫尔曼：暴击掉血
         scratchEffect = 18;
@@ -933,16 +964,16 @@ dialog.addEventListener('click', () => {
         bench.hp = Math.max(0, bench.hp - damage);
 
         if (bench.hp === 0) {
-          showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`);
-          // 0.8秒后阿尔瓦头顶冒出惊愕感叹号！
+          showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`, { dwell: 6000 });
+          // 2.4秒后阿尔瓦头顶冒出惊愕感叹号！
           setTimeout(() => {
             alva.exclamationTimer = 50;
-            showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗");
-          }, 800);
+            showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗", { dwell: 5000 });
+          }, 2400);
 
-          // 1.8秒后阿尔瓦无奈地拿出焦糖华夫饼优雅抛掷
+          // 5.4秒后阿尔瓦无奈地拿出焦糖华夫饼优雅抛掷
           setTimeout(() => {
-            showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道优雅的抛物线投掷过去——）🥞💨");
+            showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道优雅的抛物线投掷过去——）🥞💨", { dwell: 5000 });
             flyingWaffle.active = true;
             flyingWaffle.progress = 0;
             flyingWaffle.startX = alva.x + 8;
