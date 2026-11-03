@@ -884,12 +884,9 @@ dialog.addEventListener('click', () => {
       entry.innerText = text;
       dialog.appendChild(entry);
 
-      // 只保留最近 6 条，旧的轻轻淡出后移除
+      // 只保留最近 6 条，超出时立刻移除最老的一条
       while (dialog.children.length > 6) {
-        const old = dialog.firstElementChild;
-        old.classList.add('fading');
-        setTimeout(() => old.remove(), 1200);
-        if (dialog.children.length > 7) old.remove();
+        dialog.firstElementChild.remove();
       }
 
       // 滚到底部，让最新一条始终可见
