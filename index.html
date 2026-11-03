@@ -407,8 +407,8 @@
 
       // --- 投掷华夫饼动画与物理更新 ---
       if (flyingWaffle.active) {
-        flyingWaffle.progress += 0.012; // 放慢投掷速度，让小猫看清华夫饼空中弧线
-        flyingWaffle.rot += 0.14;
+        flyingWaffle.progress += 0.032; // 提速投掷抛物线，更利落回血
+        flyingWaffle.rot += 0.28;
         const p = flyingWaffle.progress;
         const wx = flyingWaffle.startX + (flyingWaffle.targetX - flyingWaffle.startX) * p;
         // 优雅的高抛物线
@@ -970,16 +970,16 @@ dialog.addEventListener('click', () => {
         bench.hp = Math.max(0, bench.hp - damage);
 
         if (bench.hp === 0) {
-          showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`, { dwell: 6000 });
-          // 2.4秒后阿尔瓦头顶冒出惊愕感叹号！
+          showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`, { dwell: 5000 });
+          // 0.6秒后阿尔瓦头顶冒出惊愕感叹号！（保留小感叹号并加速响应）
           setTimeout(() => {
-            alva.exclamationTimer = 50;
-            showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗", { dwell: 5000 });
-          }, 2400);
+            alva.exclamationTimer = 40;
+            showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗", { dwell: 4500 });
+          }, 600);
 
-          // 5.4秒后阿尔瓦无奈地拿出焦糖华夫饼优雅抛掷
+          // 1.5秒后阿尔瓦迅速拿出焦糖华夫饼优雅抛掷回血
           setTimeout(() => {
-            showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道优雅的抛物线投掷过去——）🥞💨", { dwell: 5000 });
+            showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道利落的抛物线投掷过去——）🥞💨", { dwell: 4500 });
             flyingWaffle.active = true;
             flyingWaffle.progress = 0;
             flyingWaffle.startX = alva.x + 8;
@@ -987,7 +987,7 @@ dialog.addEventListener('click', () => {
             flyingWaffle.targetX = bench.x + 18;
             flyingWaffle.targetY = bench.y + 6;
             flyingWaffle.rot = 0;
-          }, 5400);
+          }, 1500);
         } else {
           const baseText = scratchDialogues[scratchIndex % scratchDialogues.length];
           showDialog(`【暴击！-${damage} HP】` + baseText);
