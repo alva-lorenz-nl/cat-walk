@@ -1405,35 +1405,54 @@ let catAction = 'idle';
         const hasDiamondBowtie = totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1');
         const hasDiamondCrown = totalDiamondKoCount >= 10 || unlockedAchSet.has('diamond_10');
 
-        // 领结锚点：坐姿 sprite(16,15) → 本地 (0,-11)；侧身 row 6/47 sprite(21,19) → 本地 (5,-7)
+        // 领结锚点：
+        // 正面坐姿：鼻尖正对 x=15 (本地 -1), y=15 (本地 -11)
+        // 侧身 (row 6 / row 47 等)：领结侧向透视，呈精致小三角
         const sidePose = (row === 6 || row === 47);
-        const bowX = sidePose ? 5 : 0;
+        const bowX = sidePose ? 4 : -1;
         const bowY = sidePose ? -7 : -11;
 
         // 1. 领结渲染：优先展示更稀有的钻石领结，未获得钻石时展示黄金领结
         const drawBowtie = (deep, mid, light, knot) => {
-          // 左翼
-          px(bowX - 3, bowY - 1, 1, 1, mid);
-          px(bowX - 3, bowY, 1, 1, light);
-          px(bowX - 3, bowY + 1, 1, 1, mid);
-          px(bowX - 2, bowY - 1, 1, 1, light);
-          px(bowX - 2, bowY, 1, 1, deep);
-          px(bowX - 2, bowY + 1, 1, 1, light);
-          px(bowX - 1, bowY, 1, 1, deep);
-          // 右翼
-          px(bowX + 3, bowY - 1, 1, 1, mid);
-          px(bowX + 3, bowY, 1, 1, light);
-          px(bowX + 3, bowY + 1, 1, 1, mid);
-          px(bowX + 2, bowY - 1, 1, 1, light);
-          px(bowX + 2, bowY, 1, 1, deep);
-          px(bowX + 2, bowY + 1, 1, 1, light);
-          px(bowX + 1, bowY, 1, 1, deep);
-          // 结心 + 偶尔的碎钻反光
-          px(bowX, bowY - 1, 1, 1, '#ffffff');
-          px(bowX, bowY, 1, 1, '#ffffff');
-          px(bowX, bowY + 1, 1, 1, knot);
-          if (Math.random() < 0.28) {
-            px(bowX + (Math.random() < 0.5 ? -3 : 3), bowY - 2, 1, 1, '#ffffff');
+          if (sidePose) {
+            // 侧身状态：领结随猫咪转向，呈现侧向小三角透视
+            // 颈圈结扣
+            px(bowX - 1, bowY, 1, 1, '#ffffff');
+            // 小三角形侧翼
+            px(bowX, bowY - 1, 1, 1, light);
+            px(bowX, bowY, 1, 1, deep);
+            px(bowX, bowY + 1, 1, 1, mid);
+            px(bowX + 1, bowY, 1, 1, light);
+            px(bowX + 1, bowY + 1, 1, 1, mid);
+            // 细微反光
+            if (Math.random() < 0.25) {
+              px(bowX + 1, bowY - 1, 1, 1, '#ffffff');
+            }
+          } else {
+            // 正面状态：双翼平展蝴蝶结，往左微移1像素与鼻尖及胸口完美居中
+            // 左翼
+            px(bowX - 3, bowY - 1, 1, 1, mid);
+            px(bowX - 3, bowY, 1, 1, light);
+            px(bowX - 3, bowY + 1, 1, 1, mid);
+            px(bowX - 2, bowY - 1, 1, 1, light);
+            px(bowX - 2, bowY, 1, 1, deep);
+            px(bowX - 2, bowY + 1, 1, 1, light);
+            px(bowX - 1, bowY, 1, 1, deep);
+            // 右翼
+            px(bowX + 3, bowY - 1, 1, 1, mid);
+            px(bowX + 3, bowY, 1, 1, light);
+            px(bowX + 3, bowY + 1, 1, 1, mid);
+            px(bowX + 2, bowY - 1, 1, 1, light);
+            px(bowX + 2, bowY, 1, 1, deep);
+            px(bowX + 2, bowY + 1, 1, 1, light);
+            px(bowX + 1, bowY, 1, 1, deep);
+            // 结心 + 偶尔的碎钻反光
+            px(bowX, bowY - 1, 1, 1, '#ffffff');
+            px(bowX, bowY, 1, 1, '#ffffff');
+            px(bowX, bowY + 1, 1, 1, knot);
+            if (Math.random() < 0.28) {
+              px(bowX + (Math.random() < 0.5 ? -3 : 3), bowY - 2, 1, 1, '#ffffff');
+            }
           }
         };
 
