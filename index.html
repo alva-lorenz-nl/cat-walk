@@ -45,6 +45,43 @@
       margin-top: 5px;
       letter-spacing: 0.5px;
     }
+    .stats-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 8px;
+      padding: 4px 14px;
+      background: rgba(30, 24, 20, 0.85);
+      border: 1px solid #5a4b3d;
+      border-radius: 18px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+      backdrop-filter: blur(4px);
+    }
+    .stat-item {
+      font-size: 11px;
+      color: #d6cbbe;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      letter-spacing: 0.3px;
+    }
+    .stat-item b {
+      color: #f5b041;
+      font-weight: 700;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      display: inline-block;
+      transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.18s ease;
+    }
+    .stat-item b.bump {
+      transform: scale(1.45);
+      color: #ffe082;
+    }
+    .stat-sep {
+      color: #554438;
+      font-weight: bold;
+      user-select: none;
+    }
     .game-wrapper {
       position: relative;
       display: flex;
@@ -201,6 +238,11 @@
   <div class="header">
     <div class="title">LEIDEN CANAL · AUTUMN</div>
     <div class="subtitle">莱顿运河畔 · 散步的小猫、阿尔瓦与长椅上的赫尔曼</div>
+    <div class="stats-badge" id="statsBadge" title="小猫漫步战绩看板（已自动同步到本地记录）">
+      <span class="stat-item">💬 喵喵叫 <b id="statMeow">0</b> 次</span>
+      <span class="stat-sep">·</span>
+      <span class="stat-item">🐾💥 击倒赫尔曼 <b id="statKO">0</b> 次</span>
+    </div>
   </div>
 
   <div class="game-wrapper" id="gameWrapper">
@@ -910,9 +952,41 @@ dialog.addEventListener('click', () => {
       }, fadeAt);
     }
 
+    // 小猫战绩统计（本地存储持久化）
+    let totalMeowCount = parseInt(localStorage.getItem('cat_meow_count') || '0', 10);
+    let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
+
+    const elStatMeow = document.getElementById('statMeow');
+    const elStatKO = document.getElementById('statKO');
+
+    function updateStatsUI(bumpMeow, bumpKO) {
+      if (elStatMeow) {
+        elStatMeow.textContent = totalMeowCount;
+        if (bumpMeow) {
+          elStatMeow.classList.remove('bump');
+          void elStatMeow.offsetWidth;
+          elStatMeow.classList.add('bump');
+          setTimeout(() => elStatMeow.classList.remove('bump'), 220);
+        }
+      }
+      if (elStatKO) {
+        elStatKO.textContent = totalKoCount;
+        if (bumpKO) {
+          elStatKO.classList.remove('bump');
+          void elStatKO.offsetWidth;
+          elStatKO.classList.add('bump');
+          setTimeout(() => elStatKO.classList.remove('bump'), 220);
+        }
+      }
+    }
+    updateStatsUI(false, false);
+
     function catMeow() {
       catAction = 'meow';
       catActionTimer = 36;
+      totalMeowCount++;
+      try { localStorage.setItem('cat_meow_count', totalMeowCount); } catch (e) {}
+      updateStatsUI(true, false);
 
       const distAlva = Math.abs(cat.x - alva.x);
       let meowText = '';
@@ -970,6 +1044,10 @@ dialog.addEventListener('click', () => {
         bench.hp = Math.max(0, bench.hp - damage);
 
         if (bench.hp === 0) {
+          totalKoCount++;
+          try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
+          updateStatsUI(false, true);
+
           showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`, { dwell: 5000 });
           // 0.6秒后阿尔瓦头顶冒出惊愕感叹号！（保留小感叹号并加速响应）
           setTimeout(() => {
