@@ -947,6 +947,7 @@ dialog.addEventListener('click', () => {
     }
 
     function scratchAction() {
+      if (bench.hp <= 0 || flyingWaffle.active) return; // 赫尔曼倒地或正在喂饼时防重入，避免狂点时定时器堆叠造成卡死
       catAction = 'scratch';
       catActionTimer = 24;
 
@@ -981,7 +982,7 @@ dialog.addEventListener('click', () => {
             flyingWaffle.targetX = bench.x + 18;
             flyingWaffle.targetY = bench.y + 6;
             flyingWaffle.rot = 0;
-          }, 1800);
+          }, 5400);
         } else {
           const baseText = scratchDialogues[scratchIndex % scratchDialogues.length];
           showDialog(`【暴击！-${damage} HP】` + baseText);
