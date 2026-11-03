@@ -152,9 +152,14 @@
     }
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
       margin-bottom: 12px;
+    }
+    @media (max-width: 360px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
     .stats-box {
       background: rgba(0, 0, 0, 0.3);
@@ -398,7 +403,12 @@
           <div class="stats-box">
             <div class="stats-box-icon">👑✨</div>
             <div class="stats-box-num" id="modalStatBoss">0</div>
-            <div class="stats-box-label">击破黄金BOSS</div>
+            <div class="stats-box-label">黄金BOSS</div>
+          </div>
+          <div class="stats-box">
+            <div class="stats-box-icon">💎✨</div>
+            <div class="stats-box-num" id="modalStatDiamond">0</div>
+            <div class="stats-box-label">钻石赫尔曼</div>
           </div>
         </div>
         <div class="stats-flavor" id="statsFlavor">
@@ -475,10 +485,14 @@
       maxHp: 100,
       hp: 100,
       isBoss: false,
-      reviveGlow: 0
+      bossType: 'normal', // 'normal' | 'gold' | 'diamond'
+      reviveGlow: 0,
+      lastHitTime: Date.now(),
+      healTimer: 0,
+      healFlash: 0
     };
 
-    // 投喂给赫尔曼的飞行华夫饼系统（10%概率出现黄金华夫饼觉醒BOSS）
+    // 投喂给赫尔曼的飞行华夫饼系统（15%黄金华夫饼唤醒黄金BOSS，5%钻石华夫饼唤醒钻石大BOSS！）
     const flyingWaffle = {
       active: false,
       progress: 0,
@@ -487,7 +501,8 @@
       targetX: 233,
       targetY: 118,
       rot: 0,
-      isGolden: false
+      isGolden: false,
+      waffleType: 'normal' // 'normal' | 'gold' | 'diamond'
     };
     let waffleCrumbs = [];
     let reviveRays = [];
@@ -536,6 +551,14 @@
       "阿尔瓦在一旁喝了口拿铁，忍不住弯起眼睛小声提醒：『小猫加油，他的黄金涂层虽然硬，但动作好像也变迟钝了呢……』"
     ];
     let bossScratchIndex = 0;
+
+    const diamondScratchDialogues = [
+      "【💎 莫氏硬度10暴击反震！铿锵——】小猫肉垫在晶莹剔透的钻石西装上刺溜打滑！赫尔曼高傲推眼镜冷笑：『小猫崽子，这可是莫氏硬度最高级的全结晶钻石超导装甲！1000血量，挠得破算我输！』",
+      "【💎 璀璨棱镜折射！】猫爪乱挥！赫尔曼整套冰蓝钻光西服折射出七彩耀目光斑，闪得小猫眼睛眯成一条线：『哈哈哈哈！被永动轮终极钻石折射率闪瞎了吧！阿尔瓦你别光顾着看，记录实验数据啊！』",
+      "【💎 疯狂暴刮钻石结晶！】赫尔曼头顶的纯钻璀璨皇冠晃出漫天冰晶星尘：『嗷！别对着钻石领带夹死抠！那一颗克拉数抵得上莱顿三个实验室的预算！』",
+      "阿尔瓦单手扶着金丝眼镜，另一手递给小猫一块肉干温和笑道：『小猫乖，别急。钻石虽硬但脆性大，找准结晶纹理挠，他很快就要求饶了。』"
+    ];
+    let diamondScratchIndex = 0;
 
     // 猫咪台词
     const catMeows = [
@@ -634,7 +657,22 @@
         ctx.translate(wx, wy);
         ctx.rotate(flyingWaffle.rot);
 
-        if (flyingWaffle.isGolden) {
+        if (flyingWaffle.waffleType === 'diamond') {
+          // 究极传说·永恒钻石华夫饼（通体冰蓝晶莹、折射七彩棱镜华光与钻石星尘）
+          px(-5, -5, 10, 10, '#40a9ff');
+          px(-4, -4, 8, 8, '#e6f7ff');
+          px(-1, -5, 1, 10, '#bae7ff');
+          px(-5, -1, 10, 1, '#bae7ff');
+          // 纯钻核心
+          px(-1, -1, 3, 3, '#ffffff');
+          // 耀眼八角钻石星芒拖尾
+          px(-7, -2, 2, 2, '#91d5ff');
+          px(6, 1, 2, 2, '#ffffff');
+          px(-2, -7, 1, 2, '#69c0ff');
+          px(1, 6, 1, 2, '#e6f7ff');
+          px(-8, 3, 1, 1, '#ffffff');
+          px(7, -3, 1, 1, '#d3adf7');
+        } else if (flyingWaffle.waffleType === 'gold') {
           // 传说级黄金华夫饼（璀璨纯金高光、金光耀眼与星光拖尾）
           px(-5, -5, 10, 10, '#d48806');
           px(-4, -4, 8, 8, '#ffd700');
@@ -663,50 +701,76 @@
 
         if (flyingWaffle.progress >= 1) {
           flyingWaffle.active = false;
-          // 砸中赫尔曼，华夫饼碎屑炸开
-          const crumbCount = flyingWaffle.isGolden ? 24 : 14;
+          const isDiamondWaffle = (flyingWaffle.waffleType === 'diamond');
+          const isGoldWaffle = (flyingWaffle.waffleType === 'gold');
+          const crumbCount = isDiamondWaffle ? 32 : (isGoldWaffle ? 24 : 14);
+
           for (let i = 0; i < crumbCount; i++) {
+            let crumbColor;
+            if (isDiamondWaffle) {
+              crumbColor = ['#ffffff', '#e6f7ff', '#bae7ff', '#69c0ff', '#d3adf7'][Math.floor(Math.random() * 5)];
+            } else if (isGoldWaffle) {
+              crumbColor = ['#ffd700', '#fffb8f', '#ffa940', '#ffffff'][Math.floor(Math.random() * 4)];
+            } else {
+              crumbColor = Math.random() > 0.4 ? '#f3af4a' : '#fff2a8';
+            }
             waffleCrumbs.push({
               x: flyingWaffle.targetX + (Math.random() - 0.5) * 8,
               y: flyingWaffle.targetY + (Math.random() - 0.5) * 6,
-              vx: (Math.random() - 0.5) * (flyingWaffle.isGolden ? 4.5 : 3),
-              vy: -Math.random() * (flyingWaffle.isGolden ? 3.5 : 2.5) - 0.5,
-              life: flyingWaffle.isGolden ? 36 : 25,
-              color: flyingWaffle.isGolden
-                ? ['#ffd700', '#fffb8f', '#ffa940', '#ffffff'][Math.floor(Math.random() * 4)]
-                : (Math.random() > 0.4 ? '#f3af4a' : '#fff2a8')
+              vx: (Math.random() - 0.5) * (isDiamondWaffle ? 5.2 : (isGoldWaffle ? 4.5 : 3)),
+              vy: -Math.random() * (isDiamondWaffle ? 4.0 : (isGoldWaffle ? 3.5 : 2.5)) - 0.5,
+              life: isDiamondWaffle ? 42 : (isGoldWaffle ? 36 : 25),
+              color: crumbColor
             });
           }
 
-          // 赫尔曼沐浴金光！触发复活圣光粒子
-          bench.reviveGlow = flyingWaffle.isGolden ? 60 : 45;
-          const rayCount = flyingWaffle.isGolden ? 48 : 28;
+          // 赫尔曼沐浴神光！触发复活圣光粒子
+          bench.reviveGlow = isDiamondWaffle ? 75 : (isGoldWaffle ? 60 : 45);
+          const rayCount = isDiamondWaffle ? 60 : (isGoldWaffle ? 48 : 28);
           for (let i = 0; i < rayCount; i++) {
             const angle = Math.random() * Math.PI * 2;
-            const spd = 0.5 + Math.random() * (flyingWaffle.isGolden ? 3.2 : 2.2);
+            const spd = 0.5 + Math.random() * (isDiamondWaffle ? 4.0 : (isGoldWaffle ? 3.2 : 2.2));
+            let rayColor;
+            if (isDiamondWaffle) {
+              rayColor = ['#ffffff', '#e6f7ff', '#bae7ff', '#91d5ff', '#40a9ff', '#d3adf7'][Math.floor(Math.random() * 6)];
+            } else if (isGoldWaffle) {
+              rayColor = ['#fffbe6', '#ffe58f', '#ffd700', '#ffc53d', '#ffffff', '#faad14'][Math.floor(Math.random() * 6)];
+            } else {
+              rayColor = ['#fff8cc', '#ffd700', '#74b9ff', '#55efc4', '#ffffff'][Math.floor(Math.random() * 5)];
+            }
             reviveRays.push({
               x: bench.x + 18,
               y: bench.y - 2,
               vx: Math.cos(angle) * spd,
               vy: Math.sin(angle) * spd - 0.8,
-              life: (flyingWaffle.isGolden ? 45 : 35) + Math.floor(Math.random() * 20),
-              color: flyingWaffle.isGolden
-                ? ['#fffbe6', '#ffe58f', '#ffd700', '#ffc53d', '#ffffff', '#faad14'][Math.floor(Math.random() * 6)]
-                : ['#fff8cc', '#ffd700', '#74b9ff', '#55efc4', '#ffffff'][Math.floor(Math.random() * 5)]
+              life: (isDiamondWaffle ? 55 : (isGoldWaffle ? 45 : 35)) + Math.floor(Math.random() * 20),
+              color: rayColor
             });
           }
 
-          if (flyingWaffle.isGolden) {
-            // 触发 10% 黄金大BOSS 变身！
+          if (isDiamondWaffle) {
+            // 触发 5% 究极【钻石大BOSS·赫尔曼】变身！
             bench.isBoss = true;
+            bench.bossType = 'diamond';
+            bench.maxHp = 1000;
+            bench.hp = 1000;
+            bench.lastHitTime = Date.now();
+            showDialog("【💎 宇宙级神迹！5% 概率唤醒【钻石大BOSS·赫尔曼】！！💎】整条运河被折射出耀眼的冰蓝钻石极光！赫尔曼身披纯钻超导西装傲然起身（HP: 1000/1000）！『哼！莫氏硬度 10 的永恒科技结晶！小猫，这次看你怎么破防！』👑💎✨", { dwell: 7000 });
+          } else if (isGoldWaffle) {
+            // 触发 15% 黄金大BOSS 变身！
+            bench.isBoss = true;
+            bench.bossType = 'gold';
             bench.maxHp = 500;
             bench.hp = 500;
-            showDialog("【🌟 奇迹降临！10% 概率触发黄金华夫饼！！🌟】纯金焦糖能量直冲云霄！赫尔曼浑身金光暴涨，华丽变身【黄金大BOSS·赫尔曼】（HP: 500/500）！『哈哈哈哈！感受永动轮纯金科技的无上威能吧，小猫！』👑✨", { dwell: 6000 });
+            bench.lastHitTime = Date.now();
+            showDialog("【🌟 奇迹降临！15% 概率触发黄金华夫饼！！🌟】纯金焦糖能量直冲云霄！赫尔曼浑身金光暴涨，华丽变身【黄金大BOSS·赫尔曼】（HP: 500/500）！『哈哈哈哈！感受永动轮纯金科技的无上威能吧，小猫！』👑✨", { dwell: 6000 });
           } else {
             // 普通华夫饼吃饼复活
             bench.isBoss = false;
+            bench.bossType = 'normal';
             bench.maxHp = 100;
             bench.hp = 100;
+            bench.lastHitTime = Date.now();
             showDialog("【金光璀璨！✨】焦糖华夫饼注入灵魂！赫尔曼周身沐浴在复活圣光中，整整齐齐地坐直了身子：『咳……看在焦糖华夫饼的分上，这次就算了！』💗 (血条已充满)");
           }
         }
@@ -924,19 +988,53 @@ function drawPixelHerman(hx, hy) {
 
       } else {
         // --- 正常端坐姿态 ---
-        // 区分普通赫尔曼与黄金大BOSS状态色彩
-        const suitMain = bench.isBoss ? '#b8860b' : '#2c4528';
-        const suitStripe = bench.isBoss ? '#ffd700' : '#3e5e39';
-        const suitCollar = bench.isBoss ? '#8c6800' : '#20361d';
-        const vestColor = bench.isBoss ? '#e6a100' : '#5a1f1e';
+        // 区分普通赫尔曼、黄金大BOSS与钻石大BOSS状态色彩
+        const isDiamond = (bench.bossType === 'diamond');
+        const isGold = (bench.bossType === 'gold');
 
-        // 1. 坐在长椅上的深棕西裤与皮鞋
-        px(hx - 4, hy + 6, 4, 8, bench.isBoss ? '#5c4308' : '#32231a');
-        px(hx + 1, hy + 6, 4, 8, bench.isBoss ? '#4d3706' : '#2a1d16');
-        px(hx - 4, hy + 13, 3, 2, '#18120e');
-        px(hx + 1, hy + 13, 3, 2, '#18120e');
+        let suitMain, suitStripe, suitCollar, vestColor, pantsColor1, pantsColor2, paperBg, paperLine, tieColor, tiePin;
+        if (isDiamond) {
+          suitMain = '#69c0ff';     // 晶亮钻蓝
+          suitStripe = '#ffffff';   // 纯白钻石高光棱纹
+          suitCollar = '#1890ff';   // 深邃钻海蓝
+          vestColor = '#bae7ff';    // 幻彩冰蓝马甲
+          pantsColor1 = '#096dd9';
+          pantsColor2 = '#0050b3';
+          paperBg = '#e6f7ff';      // 折射钻石光芒的半透明手稿
+          paperLine = '#1890ff';
+          tieColor = '#40a9ff';     // 璀璨蓝钻领巾
+          tiePin = '#ffffff';
+        } else if (isGold) {
+          suitMain = '#b8860b';
+          suitStripe = '#ffd700';
+          suitCollar = '#8c6800';
+          vestColor = '#e6a100';
+          pantsColor1 = '#5c4308';
+          pantsColor2 = '#4d3706';
+          paperBg = '#fffbe6';
+          paperLine = '#d48806';
+          tieColor = '#ffaa00';
+          tiePin = '#fffb8f';
+        } else {
+          suitMain = '#2c4528';
+          suitStripe = '#3e5e39';
+          suitCollar = '#20361d';
+          vestColor = '#5a1f1e';
+          pantsColor1 = '#32231a';
+          pantsColor2 = '#2a1d16';
+          paperBg = '#faf7ee';
+          paperLine = '#857e74';
+          tieColor = '#1e753b';
+          tiePin = '#5be084';
+        }
 
-        // 2. 西装外套 (BOSS为奢华纯金条纹，平时为墨绿条纹)
+        // 1. 坐在长椅上的西裤与皮鞋
+        px(hx - 4, hy + 6, 4, 8, pantsColor1);
+        px(hx + 1, hy + 6, 4, 8, pantsColor2);
+        px(hx - 4, hy + 13, 3, 2, isDiamond ? '#003a8c' : '#18120e');
+        px(hx + 1, hy + 13, 3, 2, isDiamond ? '#003a8c' : '#18120e');
+
+        // 2. 西装外套 (BOSS为奢华纯金/钻石折射条纹，平时为墨绿条纹)
         px(hx - 7, hy - 4, 14, 11, suitMain);
         px(hx - 5, hy - 3, 1, 10, suitStripe);
         px(hx - 2, hy - 3, 1, 10, suitStripe);
@@ -946,27 +1044,27 @@ function drawPixelHerman(hx, hy) {
         px(hx - 6, hy - 3, 2, 7, suitCollar);
         px(hx + 4, hy - 3, 2, 7, suitCollar);
 
-        // 3. 内搭马甲与双排金纽扣
+        // 3. 内搭马甲与双排纽扣
         px(hx - 3, hy + 1, 6, 6, vestColor);
         px(hx - 1, hy + 2, 1, 1, '#ffffff');
         px(hx - 1, hy + 4, 1, 1, '#ffffff');
 
-        // 4. 白色衬衫衣领与领巾 (BOSS为纯金丝领巾)
+        // 4. 白色衬衫衣领与领巾
         px(hx - 3, hy - 4, 6, 4, '#f0ede6');
-        px(hx - 1, hy - 3, 2, 3, bench.isBoss ? '#ffaa00' : '#1e753b');
-        px(hx, hy - 3, 1, 1, bench.isBoss ? '#fffb8f' : '#5be084');
-        px(hx, hy - 1, 1, 1, '#f5d13d');
+        px(hx - 1, hy - 3, 2, 3, tieColor);
+        px(hx, hy - 3, 1, 1, tiePin);
+        px(hx, hy - 1, 1, 1, isDiamond ? '#ffffff' : '#f5d13d');
 
-        // 5. 手臂与手持报纸
+        // 5. 手臂与手持报纸/手稿
         px(hx - 8, hy - 3, 2, 8, suitMain);
         px(hx - 7, hy + 4, 2, 2, '#f4cfb2');
         px(hx + 5, hy - 3, 2, 6, suitMain);
         px(hx + 5, hy + 3, 2, 2, '#f4cfb2');
-        // 手里拿着的学术早报 (BOSS时变成发光的金色论文图纸)
-        px(hx + 4, hy + 1, 6, 8, bench.isBoss ? '#fffbe6' : '#faf7ee');
-        px(hx + 5, hy + 2, 4, 1, bench.isBoss ? '#d48806' : '#857e74');
-        px(hx + 5, hy + 4, 4, 1, bench.isBoss ? '#d48806' : '#857e74');
-        px(hx + 5, hy + 6, 4, 1, bench.isBoss ? '#d48806' : '#857e74');
+        // 手里拿着的学术早报 / 钻石光芒手稿
+        px(hx + 4, hy + 1, 6, 8, paperBg);
+        px(hx + 5, hy + 2, 4, 1, paperLine);
+        px(hx + 5, hy + 4, 4, 1, paperLine);
+        px(hx + 5, hy + 6, 4, 1, paperLine);
 
         // 6. 脖颈与下颌阴影
         px(hx - 1, hy - 5, 2, 2, '#f2ceb6');
@@ -992,27 +1090,56 @@ function drawPixelHerman(hx, hy) {
         px(hx + 1, hy - 12, 2, 1, '#4a2d1d');
 
         // 10. 血条绘制与显示
-        const barW = bench.isBoss ? 44 : 32;
+        const isDiamondBoss = (bench.bossType === 'diamond');
+        const isGoldBoss = (bench.bossType === 'gold');
+        const barW = isDiamondBoss ? 48 : (isGoldBoss ? 44 : 32);
         const barH = bench.isBoss ? 5 : 4;
         const barX = hx - barW / 2;
         const barY = bench.isBoss ? hy - 25 : hy - 21;
 
-        px(barX - 1, barY - 1, barW + 2, barH + 2, bench.isBoss ? '#ffd700' : '#000000');
-        px(barX, barY, barW, barH, '#331111');
+        const barBorder = isDiamondBoss ? '#40a9ff' : (isGoldBoss ? '#ffd700' : '#000000');
+        px(barX - 1, barY - 1, barW + 2, barH + 2, barBorder);
+        px(barX, barY, barW, barH, '#111b26');
         const hpPct = Math.max(0, bench.hp / bench.maxHp);
         const fillW = Math.round(barW * hpPct);
-        let hpColor = bench.isBoss
-          ? (hpPct > 0.5 ? '#ffd700' : (hpPct > 0.2 ? '#ff9900' : '#ff3b30'))
-          : (hpPct > 0.5 ? '#4cd964' : (hpPct > 0.2 ? '#ffcc00' : '#ff3b30'));
+        let hpColor;
+        if (isDiamondBoss) {
+          hpColor = hpPct > 0.5 ? '#40a9ff' : (hpPct > 0.2 ? '#69c0ff' : '#ff4d4f');
+        } else if (isGoldBoss) {
+          hpColor = hpPct > 0.5 ? '#ffd700' : (hpPct > 0.2 ? '#ff9900' : '#ff3b30');
+        } else {
+          hpColor = hpPct > 0.5 ? '#4cd964' : (hpPct > 0.2 ? '#ffcc00' : '#ff3b30');
+        }
         if (fillW > 0) px(barX, barY, fillW, barH, hpColor);
 
         ctx.font = bench.isBoss ? 'bold 8px monospace' : '8px monospace';
-        ctx.fillStyle = bench.isBoss ? '#ffd700' : '#ffefd5';
+        ctx.fillStyle = isDiamondBoss ? '#e6f7ff' : (isGoldBoss ? '#ffd700' : '#ffefd5');
         ctx.textAlign = 'center';
-        ctx.fillText(bench.isBoss ? `👑 ${bench.hp}/${bench.maxHp}` : `${bench.hp}/${bench.maxHp}`, hx, barY - 3);
+        const hpText = isDiamondBoss ? `💎 ${bench.hp}/${bench.maxHp}` : (isGoldBoss ? `👑 ${bench.hp}/${bench.maxHp}` : `${bench.hp}/${bench.maxHp}`);
+        ctx.fillText(hpText, hx, barY - 3);
 
-        // 如果是黄金BOSS赫尔曼，头顶悬浮迷你纯金皇冠与耀眼微光
-        if (bench.isBoss) {
+        // 如果是BOSS赫尔曼，头顶悬浮迷你皇冠与耀眼微光
+        if (isDiamondBoss) {
+          const crownY = barY - 11;
+          // 纯钻水晶皇冠 (晶莹剔透 + 闪烁纯白钻尖)
+          px(hx - 6, crownY + 2, 13, 2, '#096dd9');
+          px(hx - 5, crownY + 1, 11, 2, '#40a9ff');
+          px(hx - 5, crownY - 1, 2, 2, '#bae7ff');
+          px(hx, crownY - 3, 2, 4, '#ffffff');
+          px(hx + 4, crownY - 1, 2, 2, '#bae7ff');
+          // 皇冠核心星钻
+          px(hx, crownY + 1, 2, 1, '#ffffff');
+          px(hx - 3, crownY + 1, 1, 1, '#d3adf7');
+          px(hx + 3, crownY + 1, 1, 1, '#d3adf7');
+
+          // 钻石BOSS周身七彩折射冰晶粒子
+          if (Math.random() < 0.45) {
+            const gx = hx + (Math.random() - 0.5) * 32;
+            const gy = hy + (Math.random() - 0.5) * 26;
+            const diamondColors = ['#ffffff', '#bae7ff', '#69c0ff', '#d3adf7', '#e6f7ff'];
+            px(gx, gy, 1, 1, diamondColors[Math.floor(Math.random() * diamondColors.length)]);
+          }
+        } else if (isGoldBoss) {
           const crownY = barY - 10;
           px(hx - 5, crownY + 2, 11, 2, '#d48806');
           px(hx - 4, crownY + 1, 9, 2, '#ffd700');
@@ -1064,6 +1191,14 @@ function drawPixelHerman(hx, hy) {
           px(hx + 11, hy - 13, 1, 3, '#ffeaa7');
         }
         bench.reviveGlow--;
+      }
+
+      // 赫尔曼自然脱战回血时的绿色微光十字/上升小粒子
+      if (bench.healFlash > 0) {
+        const floatY = hy - 18 - (18 - bench.healFlash) * 0.4;
+        px(hx + 10, floatY, 3, 1, '#52c41a');
+        px(hx + 11, floatY - 1, 1, 3, '#73d13d');
+        bench.healFlash--;
       }
 
       ctx.restore();
@@ -1191,10 +1326,12 @@ dialog.addEventListener('click', () => {
     let totalMeowCount = parseInt(localStorage.getItem('cat_meow_count') || '0', 10);
     let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
     let totalBossKoCount = parseInt(localStorage.getItem('cat_boss_ko_count') || '0', 10);
+    let totalDiamondKoCount = parseInt(localStorage.getItem('cat_diamond_ko_count') || '0', 10);
 
     const modalStatMeow = document.getElementById('modalStatMeow');
     const modalStatKO = document.getElementById('modalStatKO');
     const modalStatBoss = document.getElementById('modalStatBoss');
+    const modalStatDiamond = document.getElementById('modalStatDiamond');
     const statsFlavor = document.getElementById('statsFlavor');
     const statsModal = document.getElementById('statsModal');
     const btnOpenStats = document.getElementById('btnOpenStats');
@@ -1203,8 +1340,10 @@ dialog.addEventListener('click', () => {
 
     function updateFlavorText() {
       if (!statsFlavor) return;
-      if (totalBossKoCount > 0) {
-        statsFlavor.innerText = `“不可思议！你竟然击破了 ${totalBossKoCount} 次 500HP 的【黄金大BOSS·赫尔曼】！连纯金永动西装都被你挠成碎金粉了，阿尔瓦在旁边悄悄为你鼓掌！”`;
+      if (totalDiamondKoCount > 0) {
+        statsFlavor.innerText = `“神话降临！你竟轰碎了 ${totalDiamondKoCount} 次 1000HP 的【💎 钻石大BOSS·赫尔曼】！莫氏硬度10的终极装甲在你肉垫下不堪一击！阿尔瓦正温柔地用丝帕帮你擦爪爪呢～”`;
+      } else if (totalBossKoCount > 0) {
+        statsFlavor.innerText = `“不可思议！你已经击破了 ${totalBossKoCount} 次 500HP 的【黄金大BOSS·赫尔曼】！连纯金永动西装都被你挠成碎金粉了，下一次说不定会遭遇莫氏硬度10的【钻石赫尔曼】哦！”`;
       } else if (totalKoCount === 0 && totalMeowCount === 0) {
         statsFlavor.innerText = "“小猫刚迈开爪爪踏入莱顿运河畔……快去喵一声，或者挠挠长椅上的赫尔曼看看反应吧！”";
       } else if (totalKoCount === 0) {
@@ -1212,11 +1351,11 @@ dialog.addEventListener('click', () => {
       } else if (totalKoCount < 5) {
         statsFlavor.innerText = `“赫尔曼已经被你放倒了 ${totalKoCount} 次，白手帕都快挥出火星了！阿尔瓦一边叹气，一边偷偷在背后给你塞了块华夫饼。”`;
       } else {
-        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮公司首席物理学家终结者’称号非你莫属！说不定下一次投喂华夫饼，会唤醒纯金大BOSS哦？”`;
+        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮公司首席物理学家终结者’称号非你莫属！继续投喂华夫饼，去挑战黄金甚至钻石大BOSS吧！”`;
       }
     }
 
-    function updateStatsUI(bumpMeow, bumpKO, bumpBoss) {
+    function updateStatsUI(bumpMeow, bumpKO, bumpBoss, bumpDiamond) {
       if (modalStatMeow) {
         modalStatMeow.textContent = totalMeowCount;
         if (bumpMeow) {
@@ -1242,6 +1381,15 @@ dialog.addEventListener('click', () => {
           void modalStatBoss.offsetWidth;
           modalStatBoss.classList.add('bump');
           setTimeout(() => modalStatBoss.classList.remove('bump'), 220);
+        }
+      }
+      if (modalStatDiamond) {
+        modalStatDiamond.textContent = totalDiamondKoCount;
+        if (bumpDiamond) {
+          modalStatDiamond.classList.remove('bump');
+          void modalStatDiamond.offsetWidth;
+          modalStatDiamond.classList.add('bump');
+          setTimeout(() => modalStatDiamond.classList.remove('bump'), 220);
         }
       }
       updateFlavorText();
@@ -1327,23 +1475,32 @@ dialog.addEventListener('click', () => {
       } else if (distHerman < 50) {
         // 挠赫尔曼：暴击掉血
         scratchEffect = 18;
+        bench.lastHitTime = Date.now();
         const damage = Math.floor(Math.random() * 8) + 14;
         bench.hp = Math.max(0, bench.hp - damage);
 
         if (bench.hp === 0) {
-          const wasBoss = bench.isBoss;
-          if (wasBoss) {
+          const bossMode = bench.bossType;
+          if (bossMode === 'diamond') {
+            totalDiamondKoCount++;
+            try { localStorage.setItem('cat_diamond_ko_count', totalDiamondKoCount); } catch (e) {}
+            totalKoCount++;
+            try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
+            updateStatsUI(false, true, false, true);
+
+            showDialog(`【💎 弑神碎钻暴击！-${damage} HP】1000血的【💎 钻石大BOSS·赫尔曼】彻底碎裂瘫倒！整条长椅铺满璀璨冰晶！赫尔曼虚弱瘫软：『怎么可能……莫氏硬度 10 竟然被猫肉垫拍碎了……阿尔瓦快扶我……』`, { dwell: 6500 });
+          } else if (bossMode === 'gold') {
             totalBossKoCount++;
             try { localStorage.setItem('cat_boss_ko_count', totalBossKoCount); } catch (e) {}
             totalKoCount++;
             try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
-            updateStatsUI(false, true, true);
+            updateStatsUI(false, true, true, false);
 
             showDialog(`【👑 黄金弑神暴击！-${damage} HP】500血的【黄金大BOSS·赫尔曼】终于支撑不住，浑身金粉四溅倒在长椅上！赫尔曼虚弱地喘息：『算……算你狠……连纯金永动轮科技都被你挠碎了……』`, { dwell: 6000 });
           } else {
             totalKoCount++;
             try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
-            updateStatsUI(false, true, false);
+            updateStatsUI(false, true, false, false);
 
             showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`, { dwell: 5000 });
           }
@@ -1351,18 +1508,30 @@ dialog.addEventListener('click', () => {
           // 0.6秒后阿尔瓦头顶冒出惊愕感叹号！
           setTimeout(() => {
             alva.exclamationTimer = 40;
-            if (wasBoss) {
+            if (bossMode === 'diamond') {
+              showDialog("（阿尔瓦震惊地扶稳了右眼的单边金丝镜，看着闪闪发光的长椅倒吸一口气：『赫尔曼……？！连 1000 血的超导钻石装甲都被小猫挠成碎钻了吗？！小猫你爪爪痛不痛？快来让我看看……』）❗💎", { dwell: 5500 });
+            } else if (bossMode === 'gold') {
               showDialog("（阿尔瓦目瞪口呆地看着散落一地金粉的赫尔曼，金丝单边镜差点滑下来：『赫尔曼？！连500血的纯金形态都被小猫打趴下了吗……』）❗", { dwell: 5000 });
             } else {
               showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗", { dwell: 4500 });
             }
           }, 600);
 
-          // 1.5秒后阿尔瓦拿出华夫饼优雅抛掷（10%概率为黄金华夫饼！）
+          // 1.5秒后阿尔瓦拿出华夫饼优雅抛掷（5%钻石华夫饼唤醒钻石赫尔曼，15%黄金华夫饼，80%普通）
           setTimeout(() => {
-            const isGold = Math.random() < 0.10;
-            flyingWaffle.isGolden = isGold;
-            if (isGold) {
+            const roll = Math.random();
+            let wType = 'normal';
+            if (roll < 0.05) {
+              wType = 'diamond';
+            } else if (roll < 0.20) {
+              wType = 'gold';
+            }
+            flyingWaffle.waffleType = wType;
+            flyingWaffle.isGolden = (wType === 'gold');
+
+            if (wType === 'diamond') {
+              showDialog("（阿尔瓦从牛皮纸袋深处拿出一枚通体冰蓝透亮、折射着七彩极光的【💎 永恒璀璨·钻石华夫饼】！利落高高抛出——）🥞💎✨", { dwell: 5500 });
+            } else if (wType === 'gold') {
               showDialog("（阿尔瓦翻了翻牛皮纸袋，竟摸出了一块泛着耀眼金光的【传世黄金华夫饼】！利落抛掷过去——）🥞✨👑", { dwell: 5000 });
             } else {
               showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道利落的抛物线投掷过去——）🥞💨", { dwell: 4500 });
@@ -1376,7 +1545,11 @@ dialog.addEventListener('click', () => {
             flyingWaffle.rot = 0;
           }, 1500);
         } else {
-          if (bench.isBoss) {
+          if (bench.bossType === 'diamond') {
+            const diaText = diamondScratchDialogues[diamondScratchIndex % diamondScratchDialogues.length];
+            showDialog(`【暴击！-${damage} HP】` + diaText);
+            diamondScratchIndex++;
+          } else if (bench.bossType === 'gold') {
             const bossText = bossScratchDialogues[bossScratchIndex % bossScratchDialogues.length];
             showDialog(`【暴击！-${damage} HP】` + bossText);
             bossScratchIndex++;
@@ -1479,6 +1652,20 @@ dialog.addEventListener('click', () => {
         if (catActionTimer === 0) {
           catAction = 'idle';
         }
+      }
+
+      // 赫尔曼脱战自动自然回血机制：5秒未受攻击且未躺平时，缓慢恢复HP
+      if (bench.hp > 0 && bench.hp < bench.maxHp && (Date.now() - bench.lastHitTime >= 5000)) {
+        bench.healTimer++;
+        // 约每0.8秒（48帧）回复 2 点血量（黄金BOSS形态恢复 5 点）
+        if (bench.healTimer >= 48) {
+          bench.healTimer = 0;
+          const healAmt = (bench.bossType === 'diamond') ? 8 : (bench.bossType === 'gold' ? 5 : 2);
+          bench.hp = Math.min(bench.maxHp, bench.hp + healAmt);
+          bench.healFlash = 18; // 触发头顶微绿回血小星芒
+        }
+      } else {
+        bench.healTimer = 0;
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
