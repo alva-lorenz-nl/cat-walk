@@ -1193,11 +1193,17 @@ function drawPixelHerman(hx, hy) {
         bench.reviveGlow--;
       }
 
-      // 赫尔曼自然脱战回血时的绿色微光十字/上升小粒子
+      // 赫尔曼自然脱战回血时的绿色微光十字/上升小粒子（钻石形态为冰蓝纳米晶光）
       if (bench.healFlash > 0) {
         const floatY = hy - 18 - (18 - bench.healFlash) * 0.4;
-        px(hx + 10, floatY, 3, 1, '#52c41a');
-        px(hx + 11, floatY - 1, 1, 3, '#73d13d');
+        if (bench.bossType === 'diamond') {
+          px(hx + 9, floatY, 3, 1, '#69c0ff');
+          px(hx + 10, floatY - 1, 1, 3, '#bae7ff');
+          px(hx + 11, floatY + 1, 1, 1, '#ffffff');
+        } else {
+          px(hx + 10, floatY, 3, 1, '#52c41a');
+          px(hx + 11, floatY - 1, 1, 3, '#73d13d');
+        }
         bench.healFlash--;
       }
 
@@ -1654,15 +1660,24 @@ dialog.addEventListener('click', () => {
         }
       }
 
-      // 赫尔曼脱战自动自然回血机制：5秒未受攻击且未躺平时，缓慢恢复HP
-      if (bench.hp > 0 && bench.hp < bench.maxHp && (Date.now() - bench.lastHitTime >= 5000)) {
-        bench.healTimer++;
-        // 约每0.8秒（48帧）回复 2 点血量（黄金BOSS形态恢复 5 点）
-        if (bench.healTimer >= 48) {
+      // 赫尔曼回血机制：
+      // 1) 钻石赫尔曼：结晶纳米超导装甲，完全无等待！边挨挠边持续回血（每0.8秒自愈 8 点HP，冒冰蓝纳米钻光）
+      // 2) 普通/黄金形态：脱战5秒未受攻击且未倒地时，缓慢回血
+      if (bench.hp > 0 && bench.hp < bench.maxHp) {
+        const isDiamond = (bench.bossType === 'diamond');
+        const canHeal = isDiamond || (Date.now() - bench.lastHitTime >= 5000);
+
+        if (canHeal) {
+          bench.healTimer++;
+          // 约每0.8秒（48帧）回复：钻石形态8点，黄金形态5点，普通形态2点
+          if (bench.healTimer >= 48) {
+            bench.healTimer = 0;
+            const healAmt = isDiamond ? 8 : (bench.bossType === 'gold' ? 5 : 2);
+            bench.hp = Math.min(bench.maxHp, bench.hp + healAmt);
+            bench.healFlash = 18; // 触发头顶回血小晶芒
+          }
+        } else {
           bench.healTimer = 0;
-          const healAmt = (bench.bossType === 'diamond') ? 8 : (bench.bossType === 'gold' ? 5 : 2);
-          bench.hp = Math.min(bench.maxHp, bench.hp + healAmt);
-          bench.healFlash = 18; // 触发头顶微绿回血小星芒
         }
       } else {
         bench.healTimer = 0;
