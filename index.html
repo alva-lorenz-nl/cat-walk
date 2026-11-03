@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>喵喵狐的秘密漫步小径 · Pixel Art</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background: #141419;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #f3f3f3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+    .header {
+      position: absolute;
+      top: 14px;
+      text-align: center;
+      z-index: 10;
+    }
+    .title {
+      font-size: 19px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: #eed6b1;
+      text-shadow: 2px 2px 0px #24140e, -1px -1px 0px #000;
+    }
+    .subtitle {
+      font-size: 11px;
+      color: #a49e97;
+      margin-top: 5px;
+      letter-spacing: 0.5px;
+    }
+    .game-wrapper {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0 auto;
+    }
+    .canvas-container {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.65), 0 0 0 2px #332d29;
+      background: #000;
+    }
+    canvas {
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+    .dialog-box {
+      position: absolute;
+      top: 14px;
+      width: calc(100% - 32px);
+      max-width: 580px;
+      background: rgba(22, 19, 21, 0.94);
+      border: 2px solid #6b5c4f;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      color: #ede2d3;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-8px);
+      z-index: 20;
+      box-sizing: border-box;
+      cursor: pointer;
+    }
+    .dialog-box.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
+    /* 竖屏移动端适配：将文字对话框移至画面外部（默认下方，点击可在下方/上方切换） */
+    @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+      .dialog-box {
+        top: calc(100% + 12px);
+        bottom: auto;
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px;
+        font-size: 13.5px;
+        line-height: 1.6;
+        border-radius: 10px;
+        background: rgba(22, 18, 20, 0.96);
+        border: 2px solid #7d6b5b;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.85);
+        transform: translateY(6px);
+      }
+      .dialog-box.show {
+        transform: translateY(0);
+      }
+      .dialog-box.pos-top {
+        top: auto;
+        bottom: calc(100% + 12px);
+        transform: translateY(-6px);
+      }
+      .dialog-box.pos-top.show {
+        transform: translateY(0);
+      }
+    }
+    .controls {
+      position: absolute;
+      bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      z-index: 10;
+      max-width: 95vw;
+    }
+    .btn {
+      background: #2b2520;
+      border: 2px solid #5a4b3d;
+      box-shadow: 0 4px 0 #181411;
+      color: #e8dccb;
+      padding: 9px 15px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.1s ease;
+      touch-action: manipulation;
+    }
+    .btn:active {
+      transform: translateY(3px);
+      box-shadow: 0 1px 0 #181411;
+      background: #3e332a;
+    }
+    .btn-scratch {
+      background: #5c1b18;
+      border-color: #8c322d;
+      box-shadow: 0 4px 0 #300c0a;
+      color: #ffcccc;
+    }
+    .btn-scratch:active {
+      background: #7a2622;
+      box-shadow: 0 1px 0 #300c0a;
+    }
+    .btn-meow {
+      background: #2a3a4c;
+      border-color: #4a688a;
+      box-shadow: 0 4px 0 #16202c;
+      color: #d8eaff;
+    }
+    .btn-meow:active {
+      background: #3b506b;
+      box-shadow: 0 1px 0 #16202c;
+    }
+    .tips {
+      position: absolute;
+      bottom: 2px;
+      font-size: 10px;
+      color: #635b54;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="title">LEIDEN CANAL · AUTUMN</div>
+    <div class="subtitle">莱顿运河畔 · 喵喵狐、阿尔瓦与长椅上的赫尔曼</div>
+  </div>
+
+  <div class="game-wrapper" id="gameWrapper">
+    <div class="canvas-container">
+      <canvas id="gameCanvas" width="320" height="180"></canvas>
+    </div>
+    <div class="dialog-box" id="dialog" title="点击可切换上方/下方"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn" id="btnLeft">◀ 往左走</button>
+    <button class="btn btn-meow" id="btnMeow">💬 喵喵叫</button>
+    <button class="btn" id="btnAction">🌿 探头看看</button>
+    <button class="btn btn-scratch" id="btnScratch">🐾 挠他！</button>
+    <button class="btn" id="btnRight">往右走 ▶</button>
+  </div>
+
+  <div class="tips">键盘快捷键：A/D 移动 | M 喵喵叫 | 空格 互动 | F 挠他</div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const dialog = document.getElementById('dialog');
+
+    ctx.imageSmoothingEnabled = false;
+
+    function resizeCanvas() {
+      const maxW = Math.min(window.innerWidth - 20, 640);
+      const scale = maxW / 320;
+      const w = Math.floor(320 * scale);
+      const h = Math.floor(180 * scale);
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      const gw = document.getElementById('gameWrapper');
+      if (gw) gw.style.width = w + 'px';
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const catSprite = new Image();
+    catSprite.src = 'cat_white.png';
+
+    const cat = {
+      x: 50,
+      y: 135,
+      vx: 0,
+      speed: 1.3,
+      facing: 1,
+      walkTimer: 0,
+      idleTimer: 0
+    };
+
+    // 阿尔瓦在运河畔静静伫立
+    const alva = {
+      x: 95,
+      y: 136,
+      heartTimer: 0,
+      exclamationTimer: 0
+    };
+
+    // 赫尔曼在长椅上
+    const bench = {
+      x: 215,
+      y: 114,
+      w: 42,
+      maxHp: 100,
+      hp: 100,
+      reviveGlow: 0
+    };
+
+    // 妈妈投喂给赫尔曼的飞行华夫饼系统
+    const flyingWaffle = {
+      active: false,
+      progress: 0,
+      startX: 95,
+      startY: 115,
+      targetX: 233,
+      targetY: 118,
+      rot: 0
+    };
+    let waffleCrumbs = [];
+    let reviveRays = [];
+
+    let scratchEffect = 0;
+    let leaves = [];
+    for (let i = 0; i < 16; i++) {
+      leaves.push({
+        x: Math.random() * 320,
+        y: Math.random() * 140,
+        speed: 0.3 + Math.random() * 0.4,
+        sway: Math.random() * Math.PI * 2,
+        color: Math.random() > 0.5 ? '#d97d27' : '#b3541e'
+      });
+    }
+
+    // 赫尔曼对话
+    const hermanDialogues = [
+      "赫尔曼瞥了你一眼，从深红马甲口袋里摸出一块热腾腾的华夫饼塞进你手里：『阿尔瓦那家伙又带你吹冷风了？拿着，少多嘴。』",
+      "秋风卷落运河边的黄叶。赫尔曼抚平领口处微皱的绿宝石褶领巾，轻哼一声：『小猫崽子，别把爪印蹭我条纹外袍上。』",
+      "赫尔曼翻了翻手里的算法手稿，低头对你嘀咕：『喂，小猫，让你妈妈今晚别总喝冰球古典酒了，多喝点热茶。』"
+    ];
+    let hermanDialogIndex = 0;
+
+    // 阿尔瓦对话
+    const alvaDialogues = [
+      "阿尔瓦俯下身轻轻揉了揉你的耳尖：『运河边的风有点凉，要钻进妈妈的大衣口袋里暖暖爪子吗？』",
+      "阿尔瓦把手里的南瓜拿铁凑到你鼻尖前晃了晃，眼底尽是温和的笑意：『闻闻看，加了肉桂和一点点甜奶泡，回家给你热小鱼干好不好？』",
+      "阿尔瓦温和地牵住你探过来的小爪子揉了揉肉垫：『今天在外面散步开心吗？看到赫尔曼的马甲被你抓掉扣子，我都差点没忍住笑出来。』",
+      "阿尔瓦单手把你抱起来贴了贴脸颊，长长的灰白马尾垂在你的背上：『乖小猫，走累了妈妈就一路抱着你回实验室。』"
+    ];
+    let alvaDialogIndex = 0;
+
+    const scratchDialogues = [
+      "【啪嚓！】小猫飞扑上去狠抓！赫尔曼深红马甲上的纽扣崩飞了一颗！赫尔曼咬牙切齿：『阿尔瓦！管管你惯坏的小畜生！』",
+      "【喵呜抓！】小猫亮爪！赫尔曼手里的图纸被划破，绿宝石领巾歪在一边：『嘶……这领巾是定制的！小猫崽子你给我松爪！』",
+      "【连续猫猫拳！】赫尔曼狼狈地用厚厚的研究手稿挡住脸：『别挠了！华夫饼全给你！明天我就去找阿尔瓦算账！』",
+      "阿尔瓦在一旁忍着笑，悄悄递给你一个小鱼干：『咳……好啦小猫，等下赫尔曼真要被气得冒烟了。』"
+    ];
+    let scratchIndex = 0;
+
+    // 猫咪台词
+    const catMeows = [
+      "喵呜~（尾巴得意地翘了起来）",
+      "妈妈！赫尔曼的马甲看起来特别好磨爪子！",
+      "呼噜呼噜……（用软乎乎的脑门蹭了蹭妈妈）",
+      "喵！要吃刚出炉的南瓜华夫饼~",
+      "赫尔曼又在皱眉头了，喵呜！",
+      "阿尔瓦妈妈今天辛苦啦，本喵给你踩奶~",
+      "喵嗷~（骄傲地抖了抖小耳朵）"
+    ];
+    let meowIndex = 0;
+
+    let catBubble = {
+      text: '',
+      timer: 0
+    };
+
+    function px(x, y, w, h, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(Math.round(x), Math.round(y), w, h);
+    }
+
+    function drawScene() {
+      // 1. 秋日黄昏渐变天空
+      px(0, 0, 320, 25, '#2b334a');
+      px(0, 25, 320, 30, '#424559');
+      px(0, 55, 320, 35, '#6d5854');
+      px(0, 90, 320, 30, '#946851');
+      px(0, 120, 320, 20, '#ba8358');
+
+      // 远景莱顿尖顶与老楼剪影
+      px(20, 75, 25, 45, '#221e28');
+      px(28, 60, 9, 15, '#221e28');
+      px(32, 50, 1, 10, '#221e28');
+
+      px(70, 82, 35, 38, '#26202c');
+      px(140, 70, 30, 50, '#221e28');
+      px(150, 55, 10, 15, '#221e28');
+
+      // 运河水面
+      px(0, 138, 320, 42, '#18242b');
+      const t = Date.now() * 0.002;
+      for (let y = 142; y < 180; y += 4) {
+        let waveX = (Math.sin(t + y) * 20 + 160) % 320;
+        px(waveX, y, 22, 1, '#2c434f');
+        px((waveX + 110) % 320, y + 2, 16, 1, '#3b5866');
+      }
+
+      // 岸边石阶地面
+      px(0, 118, 320, 22, '#38363c');
+      px(0, 139, 320, 2, '#1c1b1f');
+      for (let s = 0; s < 320; s += 16) {
+        px(s, 119, 1, 20, '#27262b');
+        px(s + 2, 120, 6, 1, '#4e4c54');
+        px(s + 8, 128, 5, 1, '#47454d');
+      }
+
+      // 飘落秋叶
+      leaves.forEach(l => {
+        l.y += l.speed;
+        l.x += Math.sin(l.sway += 0.04) * 0.5;
+        if (l.y > 136) {
+          l.y = 10;
+          l.x = Math.random() * 320;
+        }
+        px(l.x, l.y, 2, 2, l.color);
+      });
+
+      // 木制长椅
+      const bx = bench.x;
+      const by = bench.y;
+      px(bx - 4, by + 1, 46, 3, '#5c3a21');
+      px(bx - 4, by + 5, 46, 2, '#452b19');
+      px(bx - 6, by + 9, 50, 3, '#6e4527');
+      px(bx - 6, by + 12, 50, 2, '#3b2212');
+      px(bx - 3, by + 12, 2, 7, '#1a191b');
+      px(bx + 39, by + 12, 2, 7, '#1a191b');
+
+      // 绘制赫尔曼
+      drawPixelHerman(bx + 18, by + 1);
+
+      // 绘制阿尔瓦·洛伦兹（站在运河畔，手持南瓜拿铁）
+      drawPixelAlva(alva.x, alva.y);
+
+      // --- 投掷华夫饼动画与物理更新 ---
+      if (flyingWaffle.active) {
+        flyingWaffle.progress += 0.012; // 放慢投掷速度，让小猫看清华夫饼空中弧线
+        flyingWaffle.rot += 0.14;
+        const p = flyingWaffle.progress;
+        const wx = flyingWaffle.startX + (flyingWaffle.targetX - flyingWaffle.startX) * p;
+        // 优雅的高抛物线
+        const wy = flyingWaffle.startY + (flyingWaffle.targetY - flyingWaffle.startY) * p - Math.sin(p * Math.PI) * 48;
+
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(flyingWaffle.rot);
+        // 华夫饼本体：金黄酥脆焦糖方格
+        px(-4, -4, 8, 8, '#b86b24');
+        px(-3, -3, 6, 6, '#f3af4a');
+        px(-1, -4, 1, 8, '#783b12');
+        px(-4, -1, 8, 1, '#783b12');
+        // 中间融化的黄油方块
+        px(-1, -1, 3, 3, '#fff2a8');
+        // 香气小拖尾
+        px(-5, 0, 1, 1, '#ffffff');
+        px(5, -1, 1, 1, '#ffffff');
+        ctx.restore();
+
+        if (flyingWaffle.progress >= 1) {
+          flyingWaffle.active = false;
+          // 砸中赫尔曼，华夫饼碎屑炸开
+          for (let i = 0; i < 14; i++) {
+            waffleCrumbs.push({
+              x: flyingWaffle.targetX + (Math.random() - 0.5) * 8,
+              y: flyingWaffle.targetY + (Math.random() - 0.5) * 6,
+              vx: (Math.random() - 0.5) * 3,
+              vy: -Math.random() * 2.5 - 0.5,
+              life: 25,
+              color: Math.random() > 0.4 ? '#f3af4a' : '#fff2a8'
+            });
+          }
+
+          // 赫尔曼沐浴金光！触发复活圣光粒子
+          bench.reviveGlow = 45;
+          for (let i = 0; i < 28; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const spd = 0.5 + Math.random() * 2.2;
+            reviveRays.push({
+              x: bench.x + 18,
+              y: bench.y - 2,
+              vx: Math.cos(angle) * spd,
+              vy: Math.sin(angle) * spd - 0.8,
+              life: 35 + Math.floor(Math.random() * 20),
+              color: ['#fff8cc', '#ffd700', '#74b9ff', '#55efc4', '#ffffff'][Math.floor(Math.random() * 5)]
+            });
+          }
+
+          // 赫尔曼吃饼复活满血！
+          bench.hp = bench.maxHp;
+          showDialog("【金光璀璨！✨】焦糖华夫饼注入灵魂！赫尔曼周身沐浴在复活圣光中，整整齐齐地坐直了身子：『咳……看在焦糖华夫饼的分上，这次就算了！』💗 (血条已充满)");
+        }
+      }
+
+      // 渲染华夫饼碎屑与复活圣光粒子
+      for (let i = waffleCrumbs.length - 1; i >= 0; i--) {
+        const c = waffleCrumbs[i];
+        c.x += c.vx;
+        c.y += c.vy;
+        c.vy += 0.15; // 重力
+        c.life--;
+        px(c.x, c.y, 2, 2, c.color);
+        if (c.life <= 0) waffleCrumbs.splice(i, 1);
+      }
+      for (let i = reviveRays.length - 1; i >= 0; i--) {
+        const r = reviveRays[i];
+        r.x += r.vx;
+        r.y += r.vy;
+        r.life--;
+        px(r.x, r.y, 2, 2, r.color);
+        if (r.life <= 0) reviveRays.splice(i, 1);
+      }
+    }
+
+    // 阿尔瓦·洛伦兹 (Alva Lorenz) 16-bit 像素形象 (190cm 高挑儒雅，灰白长发低马尾，单边金丝眼镜)
+                // 阿尔瓦·洛伦兹 (Alva Lorenz) - 溫柔教授精修版 (金丝镂空单边镜、透亮浅蓝双眸、收腰暖棕马甲与小巧南瓜拿铁)
+    function drawPixelAlva(ax, ay) {
+      ctx.save();
+      const time = Date.now() * 0.003;
+      const breathe = Math.sin(time) * 0.5;
+
+      // 1. 皮鞋 (干净利落的深褐正装皮鞋与高光)
+      px(ax - 4, ay - 2, 3, 2, '#1e1b18');
+      px(ax + 1, ay - 2, 3, 2, '#1e1b18');
+      px(ax - 3, ay - 2, 1, 1, '#3a3530');
+      px(ax + 2, ay - 2, 1, 1, '#3a3530');
+
+      // 2. 长裤 (190cm修长身形的深棕西裤，带有裤褶中缝线条)
+      px(ax - 3, ay - 14, 2, 12, '#382f29');
+      px(ax + 1, ay - 14, 2, 12, '#382f29');
+      px(ax - 2, ay - 13, 1, 10, '#4a3f37');
+      px(ax + 2, ay - 13, 1, 10, '#4a3f37');
+
+      // 3. 垂在左肩上的低马尾 (柔顺灰白发丝，分段渐变微曲)
+      px(ax - 6, ay - 32 + breathe, 2, 6, '#bcc1c9');
+      px(ax - 7, ay - 26 + breathe, 2, 8, '#abb1bb');
+      px(ax - 6, ay - 18 + breathe, 2, 5, '#9299a5');
+      px(ax - 5, ay - 13 + breathe, 1, 3, '#7d8492');
+
+      // 4. 上身躯干：白衬衫与暖棕马甲
+      px(ax - 5, ay - 26 + breathe, 10, 12, '#503828');
+      px(ax - 4, ay - 26 + breathe, 8, 12, '#664733');
+      // 腰线收腰阴影
+      px(ax - 5, ay - 17 + breathe, 1, 3, '#38363c');
+      px(ax + 4, ay - 17 + breathe, 1, 3, '#38363c');
+
+      // 白衬衫V领与衣领
+      px(ax - 2, ay - 27 + breathe, 4, 3, '#f5f3f0');
+      px(ax - 1, ay - 25 + breathe, 2, 2, '#dedad5');
+
+      // 细巧金色马甲单排扣
+      px(ax, ay - 23 + breathe, 1, 1, '#e5be4e');
+      px(ax, ay - 20 + breathe, 1, 1, '#e5be4e');
+      px(ax, ay - 17 + breathe, 1, 1, '#e5be4e');
+
+      // 左胸前鸢尾花胸针
+      px(ax - 3, ay - 24 + breathe, 1, 2, '#6874c7');
+      px(ax - 4, ay - 23 + breathe, 1, 1, '#8f9af0');
+
+      // 5. 手臂与白衬衫衣袖 (微屈手肘，温和捧杯)
+      px(ax - 6, ay - 25 + breathe, 2, 7, '#edeae4');
+      px(ax + 4, ay - 25 + breathe, 2, 7, '#edeae4');
+      px(ax - 5, ay - 19 + breathe, 3, 2, '#dedad5');
+      px(ax + 2, ay - 19 + breathe, 3, 2, '#dedad5');
+      // 双手捧着马克杯
+      px(ax - 3, ay - 20 + breathe, 1, 2, '#f8dac4');
+      px(ax + 2, ay - 20 + breathe, 1, 2, '#f8dac4');
+
+      // 6. 热南瓜拿铁马克杯 (橙色陶瓷杯身、白色奶泡、小巧杯耳与飘拂蒸汽)
+      px(ax - 2, ay - 21 + breathe, 4, 4, '#d9742b');
+      px(ax - 1, ay - 22 + breathe, 2, 1, '#fff5ea');
+      px(ax + 2, ay - 20 + breathe, 1, 2, '#b55816');
+      // 袅袅升起的拿铁香气蒸汽
+      const steamY1 = (ay - 24 - (time * 10) % 8) + breathe;
+      const steamY2 = (ay - 26 - (time * 12 + 4) % 8) + breathe;
+      px(ax - 1 + Math.sin(time * 2) * 2, steamY1, 1, 1, 'rgba(255,255,255,0.6)');
+      px(ax + 1 + Math.cos(time * 2) * 2, steamY2, 1, 1, 'rgba(255,255,255,0.4)');
+
+      // 7. 脖颈与下颌阴影 (区分头部与身体)
+      px(ax - 1, ay - 29 + breathe, 2, 2, '#f2ceb6');
+      px(ax - 3, ay - 30 + breathe, 6, 1, '#e2b396');
+
+      // 8. 脸庞与浅浅红晕
+      px(ax - 3, ay - 35 + breathe, 6, 5, '#fce3d2');
+      px(ax - 2, ay - 31 + breathe, 4, 1, '#fce3d2');
+      px(ax - 3, ay - 32 + breathe, 1, 1, '#f5b5ab');
+      px(ax + 2, ay - 32 + breathe, 1, 1, '#f5b5ab');
+      // 浅浅笑意
+      px(ax - 1, ay - 31 + breathe, 2, 1, '#c98a7a');
+
+      // 9. 眼睛与金丝镂空单边眼镜
+      // 左眼 (温和浅蓝眼眸 + 上眼睫)
+      px(ax - 2, ay - 33 + breathe, 1, 1, '#5ca3cf');
+      px(ax - 2, ay - 34 + breathe, 1, 1, '#346f96');
+      // 右眼金丝镂空眼镜 (纤细镜圈 + 镜片透出浅蓝眼眸 + 高光反光 + 下垂金链)
+      px(ax + 1, ay - 34 + breathe, 3, 1, '#d4af37');
+      px(ax + 1, ay - 32 + breathe, 3, 1, '#d4af37');
+      px(ax, ay - 33 + breathe, 1, 1, '#d4af37');
+      px(ax + 3, ay - 33 + breathe, 1, 1, '#d4af37');
+      px(ax + 1, ay - 33 + breathe, 1, 1, '#68b1db');
+      px(ax + 2, ay - 33 + breathe, 1, 1, '#d7f0ff');
+      // 垂在耳畔的细金链
+      px(ax + 3, ay - 31 + breathe, 1, 2, '#d4af37');
+      px(ax + 4, ay - 29 + breathe, 1, 3, '#c29d2b');
+
+      // 10. 灰白长发与发丝层次
+      px(ax - 5, ay - 39 + breathe, 10, 5, '#ced3da');
+      px(ax - 5, ay - 36 + breathe, 2, 6, '#b8bec8');
+      px(ax + 3, ay - 36 + breathe, 2, 6, '#b8bec8');
+      px(ax - 4, ay - 40 + breathe, 8, 2, '#edf0f5');
+      px(ax - 3, ay - 37 + breathe, 6, 2, '#e2e6ed');
+      px(ax - 1, ay - 35 + breathe, 1, 2, '#edf0f5');
+      px(ax + 2, ay - 36 + breathe, 1, 3, '#ced3da');
+
+      // 头顶名牌标识
+      ctx.font = '8px monospace';
+      ctx.fillStyle = '#eed6b1';
+      ctx.textAlign = 'center';
+      ctx.fillText('阿尔瓦', ax, ay - 44 + breathe);
+
+      // 头顶感叹号特效（发现赫尔曼倒下时）
+      if (alva.exclamationTimer > 0) {
+        const ey = ay - 48 + breathe - Math.min(6, (50 - alva.exclamationTimer) * 0.8);
+        // 感叹号气泡与像素符号：黄白明亮带黑描边
+        px(ax - 2, ey - 9, 5, 1, '#1a1a1a');
+        px(ax - 3, ey - 8, 7, 7, '#1a1a1a');
+        px(ax - 2, ey - 1, 5, 1, '#1a1a1a');
+        // 感叹号黄色底色
+        px(ax - 2, ey - 8, 5, 7, '#ffcc00');
+        // 感叹号红色叹号本体
+        px(ax - 1, ey - 7, 3, 3, '#ff2d55');
+        px(ax, ey - 4, 1, 1, '#ff2d55');
+        px(ax, ey - 2, 1, 1, '#ff2d55');
+        alva.exclamationTimer--;
+      }
+
+      // 爱心互动特效
+      if (alva.heartTimer > 0) {
+        const hy = ay - 48 - (24 - alva.heartTimer) * 0.4;
+        px(ax - 2, hy, 2, 2, '#ff6b81');
+        px(ax + 1, hy, 2, 2, '#ff6b81');
+        px(ax - 3, hy + 2, 7, 2, '#ff4757');
+        px(ax - 2, hy + 4, 5, 2, '#ff4757');
+        px(ax - 1, hy + 6, 3, 2, '#ff4757');
+        px(ax, hy + 8, 1, 1, '#ff4757');
+        alva.heartTimer--;
+      }
+
+      ctx.restore();
+    }
+
+function drawPixelHerman(hx, hy) {
+      ctx.save();
+      const shake = scratchEffect > 0 ? (Math.random() - 0.5) * 5 : 0;
+      ctx.translate(shake, 0);
+
+      // 判断赫尔曼是否被小猫挠到 0 血瘫倒在长椅上
+      if (bench.hp <= 0) {
+        // --- 0血倒地躺平姿态 ---
+        // 1. 瘫在长椅上的双腿 (横向伸直)
+        px(hx + 3, hy + 4, 10, 3, '#32231a');
+        px(hx + 12, hy + 3, 3, 4, '#18120e'); // 皮鞋垂在长椅边
+
+        // 2. 躺平的墨绿条纹西装躯干
+        px(hx - 5, hy + 2, 9, 5, '#2c4528');
+        px(hx - 4, hy + 3, 7, 1, '#3e5e39'); // 横条纹
+        px(hx - 3, hy + 4, 5, 2, '#5a1f1e'); // 露出的酒红马甲
+
+        // 3. 耷拉垂在长椅下的手臂与掉落在地的报纸
+        px(hx - 2, hy + 5, 2, 5, '#2c4528');
+        px(hx - 2, hy + 10, 2, 2, '#f4cfb2'); // 无力的手
+        // 报纸散落在长椅旁的地面上
+        px(hx - 6, hy + 11, 7, 3, '#faf7ee');
+        px(hx - 5, hy + 12, 5, 1, '#857e74');
+
+        // 4. 歪躺在长椅扶手上的脑袋 (闭眼发晕状态)
+        px(hx - 13, hy + 1, 8, 6, '#fce1ce'); // 脸部
+        px(hx - 14, hy - 1, 9, 3, '#4a2d1d'); // 凌乱散开的棕短发
+        px(hx - 14, hy + 2, 2, 4, '#4a2d1d');
+        // 晕厥的横线闭眼
+        px(hx - 11, hy + 3, 2, 1, '#1a532d');
+        px(hx - 8, hy + 3, 2, 1, '#1a532d');
+        // 委屈微张的嘴角
+        px(hx - 10, hy + 5, 2, 1, '#b86658');
+
+        // 5. 肚子上飘着的小白旗/投降白手帕
+        px(hx + 1, hy + 1, 4, 3, '#ffffff');
+        px(hx + 2, hy - 1, 1, 2, '#d0c8b8'); // 手帕小角
+
+        // 6. 头顶转圈圈的小晕星
+        const dizzyTime = Date.now() * 0.005;
+        const starX1 = hx - 10 + Math.cos(dizzyTime) * 6;
+        const starY1 = hy - 6 + Math.sin(dizzyTime) * 3;
+        const starX2 = hx - 10 + Math.cos(dizzyTime + Math.PI) * 6;
+        const starY2 = hy - 6 + Math.sin(dizzyTime + Math.PI) * 3;
+        px(starX1, starY1, 2, 2, '#ffd700');
+        px(starX2, starY2, 2, 2, '#ffae19');
+
+        // 头顶显示【已瘫倒】标识
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#ff6b81';
+        ctx.textAlign = 'center';
+        ctx.fillText('0/100 (瘫倒休假中)', hx, hy - 12);
+
+      } else {
+        // --- 正常端坐姿态 ---
+        // 1. 坐在长椅上的深棕西裤与皮鞋
+        px(hx - 4, hy + 6, 4, 8, '#32231a');
+        px(hx + 1, hy + 6, 4, 8, '#2a1d16');
+        px(hx - 4, hy + 13, 3, 2, '#18120e');
+        px(hx + 1, hy + 13, 3, 2, '#18120e');
+
+        // 2. 墨绿条纹西装外套 (带有细腻暗浅绿竖条纹)
+        px(hx - 7, hy - 4, 14, 11, '#2c4528');
+        px(hx - 5, hy - 3, 1, 10, '#3e5e39');
+        px(hx - 2, hy - 3, 1, 10, '#3e5e39');
+        px(hx + 2, hy - 3, 1, 10, '#3e5e39');
+        px(hx + 5, hy - 3, 1, 10, '#3e5e39');
+        // 挺括西装驳领
+        px(hx - 6, hy - 3, 2, 7, '#20361d');
+        px(hx + 4, hy - 3, 2, 7, '#20361d');
+
+        // 3. 内搭酒红马甲与双排金纽扣
+        px(hx - 3, hy + 1, 6, 6, '#5a1f1e');
+        px(hx - 1, hy + 2, 1, 1, '#d4af37');
+        px(hx - 1, hy + 4, 1, 1, '#d4af37');
+
+        // 4. 白色衬衫衣领与祖母绿领巾 (佩戴金质领针)
+        px(hx - 3, hy - 4, 6, 4, '#f0ede6');
+        px(hx - 1, hy - 3, 2, 3, '#1e753b');
+        px(hx, hy - 3, 1, 1, '#5be084');
+        px(hx, hy - 1, 1, 1, '#f5d13d');
+
+        // 5. 手臂与手持报纸
+        px(hx - 8, hy - 3, 2, 8, '#2c4528');
+        px(hx - 7, hy + 4, 2, 2, '#f4cfb2');
+        px(hx + 5, hy - 3, 2, 6, '#2c4528');
+        px(hx + 5, hy + 3, 2, 2, '#f4cfb2');
+        // 手里拿着的学术早报
+        px(hx + 4, hy + 1, 6, 8, '#faf7ee');
+        px(hx + 5, hy + 2, 4, 1, '#857e74');
+        px(hx + 5, hy + 4, 4, 1, '#857e74');
+        px(hx + 5, hy + 6, 4, 1, '#857e74');
+
+        // 6. 脖颈与下颌阴影
+        px(hx - 1, hy - 5, 2, 2, '#f2ceb6');
+        px(hx - 3, hy - 6, 6, 1, '#deb092');
+
+        // 7. 面部轮廓与标志性微挑嘴角
+        px(hx - 3, hy - 11, 6, 5, '#fce1ce');
+        px(hx - 2, hy - 7, 4, 1, '#fce1ce');
+        px(hx, hy - 7, 2, 1, '#b86658');
+
+        // 8. 祖母绿眼眸与深色剑眉
+        px(hx - 2, hy - 9, 1, 1, '#238a46');
+        px(hx - 2, hy - 10, 1, 1, '#1a532d');
+        px(hx + 1, hy - 9, 1, 1, '#238a46');
+        px(hx + 1, hy - 10, 1, 1, '#1a532d');
+
+        // 9. 棕色利落短发与分界刘海
+        px(hx - 4, hy - 14, 8, 4, '#4a2d1d');
+        px(hx - 3, hy - 15, 6, 2, '#5e3a26');
+        px(hx - 5, hy - 12, 2, 5, '#3b2214');
+        px(hx + 3, hy - 12, 2, 5, '#3b2214');
+        px(hx - 3, hy - 12, 2, 2, '#4a2d1d');
+        px(hx + 1, hy - 12, 2, 1, '#4a2d1d');
+
+        // 10. 血条绘制与显示
+        const barW = 32;
+        const barH = 4;
+        const barX = hx - barW / 2;
+        const barY = hy - 21;
+
+        px(barX - 1, barY - 1, barW + 2, barH + 2, '#000000');
+        px(barX, barY, barW, barH, '#331111');
+        const hpPct = Math.max(0, bench.hp / bench.maxHp);
+        const fillW = Math.round(barW * hpPct);
+        let hpColor = hpPct > 0.5 ? '#4cd964' : (hpPct > 0.2 ? '#ffcc00' : '#ff3b30');
+        if (fillW > 0) px(barX, barY, fillW, barH, hpColor);
+
+        ctx.font = '8px monospace';
+        ctx.fillStyle = '#ffefd5';
+        ctx.textAlign = 'center';
+        ctx.fillText(`${bench.hp}/${bench.maxHp}`, hx, barY - 3);
+      }
+
+      // 猫猫抓挠抓痕特效
+      if (scratchEffect > 0) {
+        const sx = hx - 4;
+        const sy = hy - 4;
+        px(sx - 3, sy - 3, 2, 2, '#ff3b30');
+        px(sx - 1, sy - 1, 2, 2, '#ff6961');
+        px(sx + 1, sy + 1, 2, 2, '#ffffff');
+
+        px(sx + 3, sy - 2, 2, 2, '#ff3b30');
+        px(sx + 5, sy, 2, 2, '#ff6961');
+        px(sx + 7, sy + 2, 2, 2, '#ffffff');
+        scratchEffect--;
+      }
+
+      // 赫尔曼获得投喂后的金光圣气特效
+      if (bench.reviveGlow > 0) {
+        const ringAlpha = (bench.reviveGlow / 45) * 0.6;
+        ctx.fillStyle = `rgba(255, 235, 120, ${ringAlpha})`;
+        ctx.beginPath();
+        ctx.arc(hx, hy - 4, 18 - (bench.reviveGlow % 10), 0, Math.PI * 2);
+        ctx.fill();
+
+        // 闪烁的十字小星芒
+        const flare = bench.reviveGlow % 6;
+        if (flare < 3) {
+          px(hx - 12, hy - 16, 3, 1, '#ffffff');
+          px(hx - 11, hy - 17, 1, 3, '#ffffff');
+          px(hx + 10, hy - 12, 3, 1, '#ffeaa7');
+          px(hx + 11, hy - 13, 1, 3, '#ffeaa7');
+        }
+        bench.reviveGlow--;
+      }
+
+      ctx.restore();
+    }
+
+let catAction = 'idle';
+    let catActionTimer = 0;
+
+    function drawPixelCat(x, y, facing, isMoving, walkTimer, idleTimer) {
+      ctx.save();
+      ctx.imageSmoothingEnabled = false;
+      ctx.translate(Math.round(x), Math.round(y));
+      ctx.scale(facing, 1);
+
+      if (catSprite.complete && catSprite.naturalWidth > 0) {
+        let row = 28;
+        let frame = 0;
+
+        if (catAction === 'scratch') {
+          row = 47;
+          frame = Math.floor(catActionTimer / 3) % 8;
+        } else if (catAction === 'meow') {
+          row = 28;
+          const mSeq = [0, 1, 2, 2, 1, 0];
+          frame = mSeq[Math.floor(catActionTimer / 4) % mSeq.length];
+        } else if (isMoving) {
+          row = 6;
+          frame = Math.floor(walkTimer / 5) % 8;
+        } else {
+          const idleCycle = idleTimer % 300;
+          if (idleCycle < 180) {
+            row = 28;
+            frame = 0;
+          } else {
+            row = 36;
+            frame = Math.floor((idleCycle - 180) / 15) % 8;
+          }
+        }
+
+        ctx.drawImage(
+          catSprite,
+          frame * 32, row * 32, 32, 32,
+          -16, -26, 32, 32
+        );
+      } else {
+        px(-8, -10, 16, 10, '#ffffff');
+      }
+
+      ctx.restore();
+
+      if (catBubble.timer > 0) {
+        drawCatSpeechBubble(x, y - 28);
+        catBubble.timer--;
+      }
+    }
+
+    function drawCatSpeechBubble(bx, by) {
+      ctx.save();
+      const bw = 20;
+      const bh = 13;
+      
+      let bubbleX = Math.round(bx - bw / 2);
+      let bubbleY = Math.round(by - bh);
+
+      // 气泡圆角白底
+      px(bubbleX + 1, bubbleY, bw - 2, bh, '#ffffff');
+      px(bubbleX, bubbleY + 1, bw, bh - 2, '#ffffff');
+      // 深色描边
+      px(bubbleX + 1, bubbleY - 1, bw - 2, 1, '#2b2320');
+      px(bubbleX + 1, bubbleY + bh, bw - 2, 1, '#2b2320');
+      px(bubbleX - 1, bubbleY + 1, 1, bh - 2, '#2b2320');
+      px(bubbleX + bw, bubbleY + 1, 1, bh - 2, '#2b2320');
+
+      // 小气泡尖角尾巴指向猫猫小脑门
+      px(bx - 1, bubbleY + bh, 3, 1, '#ffffff');
+      px(bx, bubbleY + bh + 1, 2, 1, '#ffffff');
+      px(bx + 1, bubbleY + bh + 2, 1, 1, '#ffffff');
+      px(bx - 2, bubbleY + bh, 1, 1, '#2b2320');
+      px(bx - 1, bubbleY + bh + 1, 1, 1, '#2b2320');
+      px(bx, bubbleY + bh + 2, 1, 1, '#2b2320');
+      px(bx + 2, bubbleY + bh + 1, 1, 1, '#2b2320');
+      px(bx + 2, bubbleY + bh + 2, 1, 1, '#2b2320');
+      px(bx + 1, bubbleY + bh + 3, 1, 1, '#2b2320');
+
+      // 仅保留一个软软红润的「喵」
+      ctx.font = 'bold 9px -apple-system, monospace';
+      ctx.fillStyle = '#2b2320';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('喵', bubbleX + bw / 2, bubbleY + bh / 2 + 1);
+
+      ctx.restore();
+    }
+
+dialog.addEventListener('click', () => {
+      dialog.classList.toggle('pos-top');
+    });
+
+    function showDialog(text) {
+      dialog.innerText = text;
+      dialog.classList.add('show');
+      clearTimeout(window.dialogTimer);
+      window.dialogTimer = setTimeout(() => {
+        dialog.classList.remove('show');
+      }, 5500);
+    }
+
+    function catMeow() {
+      catAction = 'meow';
+      catActionTimer = 36;
+
+      const distAlva = Math.abs(cat.x - alva.x);
+      let meowText = '';
+
+      if (distAlva < 38) {
+        alva.heartTimer = 25;
+        const alvaMeows = [
+          "呼噜呼噜……（用软乎乎的小脑门亲昵地蹭妈妈的裤腿）",
+          "喵呜~（仰着小圆脸冲妈妈叫，尾巴尖轻轻勾住妈妈的大衣）",
+          "阿尔瓦妈妈今天辛苦啦，本喵给你踩奶~"
+        ];
+        meowText = alvaMeows[Math.floor(Math.random() * alvaMeows.length)];
+      } else {
+        meowText = catMeows[meowIndex % catMeows.length];
+        meowIndex++;
+      }
+
+      catBubble.text = meowText.length > 14 ? meowText.slice(0, 13) + '…' : meowText;
+      catBubble.timer = 120;
+      showDialog(`【小猫轻声叫唤】${meowText}`);
+    }
+
+    function interact() {
+      const distAlva = Math.abs(cat.x - alva.x);
+      const distHerman = Math.abs(cat.x - (bench.x + 18));
+
+      if (distAlva < 38) {
+        alva.heartTimer = 30;
+        showDialog(alvaDialogues[alvaDialogIndex % alvaDialogues.length]);
+        alvaDialogIndex++;
+      } else if (distHerman < 45) {
+        showDialog(hermanDialogues[hermanDialogIndex % hermanDialogues.length]);
+        hermanDialogIndex++;
+      } else {
+        catMeow();
+      }
+    }
+
+    function scratchAction() {
+      catAction = 'scratch';
+      catActionTimer = 24;
+
+      const distAlva = Math.abs(cat.x - alva.x);
+      const distHerman = Math.abs(cat.x - (bench.x + 18));
+
+      if (distAlva < 38) {
+        // 挠阿尔瓦：妈妈握住爪爪摸摸
+        alva.heartTimer = 35;
+        showDialog("【小猫挥舞粉肉垫扑空！】阿尔瓦温和地托住你的两只小山竹，笑着揉了揉你的下巴：『怎么连妈妈也要挠呀？爪爪累不累，晚上给你加一份小鱼干好不好？』💗");
+      } else if (distHerman < 50) {
+        // 挠赫尔曼：暴击掉血
+        scratchEffect = 18;
+        const damage = Math.floor(Math.random() * 8) + 14;
+        bench.hp = Math.max(0, bench.hp - damage);
+
+        if (bench.hp === 0) {
+          showDialog(`【像素暴击！-${damage} HP】赫尔曼血条被打空瘫倒在长椅上！他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』`);
+          // 0.8秒后阿尔瓦头顶冒出惊愕感叹号！
+          setTimeout(() => {
+            alva.exclamationTimer = 50;
+            showDialog("（阿尔瓦转过头看到瘫倒在长椅上的赫尔曼，头顶冒出了感叹号：『赫尔曼？！怎么又和小猫闹成这样……』）❗");
+          }, 800);
+
+          // 1.8秒后阿尔瓦无奈地拿出焦糖华夫饼优雅抛掷
+          setTimeout(() => {
+            showDialog("（阿尔瓦轻叹一声，从牛皮纸袋里取出一块金黄焦糖华夫饼，划出一道优雅的抛物线投掷过去——）🥞💨");
+            flyingWaffle.active = true;
+            flyingWaffle.progress = 0;
+            flyingWaffle.startX = alva.x + 8;
+            flyingWaffle.startY = alva.y - 16;
+            flyingWaffle.targetX = bench.x + 18;
+            flyingWaffle.targetY = bench.y + 6;
+            flyingWaffle.rot = 0;
+          }, 1800);
+        } else {
+          const baseText = scratchDialogues[scratchIndex % scratchDialogues.length];
+          showDialog(`【暴击！-${damage} HP】` + baseText);
+          scratchIndex++;
+        }
+      } else {
+        showDialog("隔太远啦！小猫在秋风里挥了挥软乎乎的小肉垫——走近一点再互动吧！");
+      }
+    }
+
+    // 控制与按键绑定
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      if (e.key === ' ' || e.key === 'Enter') interact();
+      if (e.key === 'm' || e.key === 'M') catMeow();
+      if (e.key === 'f' || e.key === 'F' || e.key === 'x' || e.key === 'X') scratchAction();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+
+    const btnLeft = document.getElementById('btnLeft');
+    const btnRight = document.getElementById('btnRight');
+    const btnAction = document.getElementById('btnAction');
+    const btnScratch = document.getElementById('btnScratch');
+    const btnMeow = document.getElementById('btnMeow');
+
+    let touchLeft = false, touchRight = false;
+    btnLeft.addEventListener('pointerdown', (e) => { e.preventDefault(); touchLeft = true; });
+    window.addEventListener('pointerup', () => { touchLeft = false; touchRight = false; });
+    btnRight.addEventListener('pointerdown', (e) => { e.preventDefault(); touchRight = true; });
+    
+    btnAction.addEventListener('click', interact);
+    btnScratch.addEventListener('click', scratchAction);
+    btnMeow.addEventListener('click', catMeow);
+
+    // 点击事件检测
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = (e.clientX - rect.left) / (rect.width / 320);
+      const clickY = (e.clientY - rect.top) / (rect.height / 180);
+
+      // 点阿尔瓦
+      if (Math.abs(clickX - alva.x) < 18 && Math.abs(clickY - (alva.y - 18)) < 24) {
+        alva.heartTimer = 30;
+        showDialog(alvaDialogues[alvaDialogIndex % alvaDialogues.length]);
+        alvaDialogIndex++;
+        return;
+      }
+
+      // 点猫猫
+      if (Math.abs(clickX - cat.x) < 18 && Math.abs(clickY - cat.y + 10) < 18) {
+        catMeow();
+        return;
+      }
+
+      // 点赫尔曼
+      if (Math.abs(clickX - (bench.x + 18)) < 22 && Math.abs(clickY - (bench.y + 6)) < 20) {
+        scratchAction();
+        return;
+      }
+    });
+
+    function gameLoop() {
+      cat.vx = 0;
+      if (keys['ArrowLeft'] || keys['a'] || touchLeft) {
+        cat.vx = -cat.speed;
+        cat.facing = -1;
+      }
+      if (keys['ArrowRight'] || keys['d'] || touchRight) {
+        cat.vx = cat.speed;
+        cat.facing = 1;
+      }
+
+      cat.x += cat.vx;
+      if (cat.x < 15) cat.x = 15;
+      if (cat.x > 305) cat.x = 305;
+
+      const isMoving = (cat.vx !== 0);
+      if (isMoving) {
+        cat.walkTimer += 1;
+        cat.idleTimer = 0;
+      } else {
+        cat.idleTimer += 1;
+        cat.walkTimer = 0;
+      }
+
+      if (catActionTimer > 0) {
+        catActionTimer--;
+        if (catActionTimer === 0) {
+          catAction = 'idle';
+        }
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawScene();
+      drawPixelCat(cat.x, cat.y, cat.facing, isMoving, cat.walkTimer, cat.idleTimer);
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
