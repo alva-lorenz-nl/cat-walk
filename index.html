@@ -45,42 +45,173 @@
       margin-top: 5px;
       letter-spacing: 0.5px;
     }
-    .stats-badge {
+    /* 战绩入口小按键（浮动在右上角，小巧优雅不占屏） */
+    .btn-stats-trigger {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 100;
       display: inline-flex;
       align-items: center;
-      gap: 12px;
-      margin-top: 8px;
-      padding: 4px 14px;
-      background: rgba(30, 24, 20, 0.85);
-      border: 1px solid #5a4b3d;
+      gap: 6px;
+      padding: 6px 12px;
+      background: rgba(32, 25, 21, 0.88);
+      border: 1.5px solid #6b5745;
       border-radius: 18px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
-      backdrop-filter: blur(4px);
-    }
-    .stat-item {
+      color: #eed6b1;
       font-size: 11px;
-      color: #d6cbbe;
-      display: inline-flex;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(5px);
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-stats-trigger:hover {
+      background: rgba(50, 39, 32, 0.96);
+      border-color: #8c735d;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .btn-stats-trigger:active {
+      transform: translateY(1px);
+      background: #251c17;
+    }
+
+    /* 战绩弹窗遮罩与卡片 */
+    .stats-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(10, 8, 8, 0.75);
+      backdrop-filter: blur(6px);
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+    .stats-modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .stats-modal-card {
+      width: 100%;
+      max-width: 320px;
+      background: #1f1916;
+      border: 2px solid #6e5a48;
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+      padding: 18px;
+      color: #eed6b1;
+      transform: scale(0.92);
+      transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-sizing: border-box;
+    }
+    .stats-modal-overlay.active .stats-modal-card {
+      transform: scale(1);
+    }
+    .stats-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px dashed #4a3a2e;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .stats-modal-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #f5b041;
+      letter-spacing: 0.5px;
+      display: flex;
       align-items: center;
       gap: 5px;
-      letter-spacing: 0.3px;
     }
-    .stat-item b {
-      color: #f5b041;
-      font-weight: 700;
-      font-size: 13px;
+    .stats-modal-close {
+      background: none;
+      border: none;
+      color: #9c8e82;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.15s ease;
+    }
+    .stats-modal-close:hover {
+      color: #ffffff;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .stats-box {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #4a3b2f;
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+    }
+    .stats-box-icon {
+      font-size: 20px;
+      margin-bottom: 2px;
+    }
+    .stats-box-num {
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffd180;
       font-variant-numeric: tabular-nums;
-      display: inline-block;
-      transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.18s ease;
+      line-height: 1.1;
+      transition: transform 0.18s ease, color 0.18s ease;
     }
-    .stat-item b.bump {
-      transform: scale(1.45);
-      color: #ffe082;
+    .stats-box-num.bump {
+      transform: scale(1.35);
+      color: #fff176;
     }
-    .stat-sep {
-      color: #554438;
-      font-weight: bold;
-      user-select: none;
+    .stats-box-label {
+      font-size: 11px;
+      color: #b0a396;
+      margin-top: 4px;
+    }
+    .stats-flavor {
+      font-size: 11px;
+      line-height: 1.5;
+      color: #d1c1b1;
+      background: rgba(43, 33, 27, 0.65);
+      border-left: 3px solid #8c735d;
+      padding: 8px 10px;
+      border-radius: 0 6px 6px 0;
+      margin-bottom: 14px;
+      font-style: italic;
+    }
+    .stats-modal-btn-close {
+      width: 100%;
+      padding: 8px 0;
+      background: #362a22;
+      border: 1.5px solid #6b5745;
+      border-radius: 8px;
+      color: #eed6b1;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 0 #181411;
+      transition: all 0.15s ease;
+    }
+    .stats-modal-btn-close:active {
+      transform: translateY(1px);
+      box-shadow: 0 0 0;
+      background: #281e18;
     }
     .game-wrapper {
       position: relative;
@@ -238,10 +369,38 @@
   <div class="header">
     <div class="title">LEIDEN CANAL · AUTUMN</div>
     <div class="subtitle">莱顿运河畔 · 散步的小猫、阿尔瓦与长椅上的赫尔曼</div>
-    <div class="stats-badge" id="statsBadge" title="小猫漫步战绩看板（已自动同步到本地记录）">
-      <span class="stat-item">💬 喵喵叫 <b id="statMeow">0</b> 次</span>
-      <span class="stat-sep">·</span>
-      <span class="stat-item">🐾💥 击倒赫尔曼 <b id="statKO">0</b> 次</span>
+  </div>
+
+  <!-- 浮动战绩按钮，小巧精致，不占用主视觉空间 -->
+  <button class="btn-stats-trigger" id="btnOpenStats" title="查看小猫漫步战绩手帐 (快捷键 T)">
+    📜 战绩看板
+  </button>
+
+  <!-- 弹出式战绩看板模态框 -->
+  <div class="stats-modal-overlay" id="statsModal">
+    <div class="stats-modal-card">
+      <div class="stats-modal-header">
+        <span class="stats-modal-title">🐾 小猫漫步手帐 · 战绩看板</span>
+        <button class="stats-modal-close" id="btnCloseStats" title="关闭">&times;</button>
+      </div>
+      <div class="stats-modal-body">
+        <div class="stats-grid">
+          <div class="stats-box">
+            <div class="stats-box-icon">💬</div>
+            <div class="stats-box-num" id="modalStatMeow">0</div>
+            <div class="stats-box-label">喵喵叫唤</div>
+          </div>
+          <div class="stats-box">
+            <div class="stats-box-icon">🐾💥</div>
+            <div class="stats-box-num" id="modalStatKO">0</div>
+            <div class="stats-box-label">击倒赫尔曼</div>
+          </div>
+        </div>
+        <div class="stats-flavor" id="statsFlavor">
+          “长椅上的赫尔曼今天也在叹气呢……不过别担心，小鱼干和华夫饼我都给你备好了。”
+        </div>
+        <button class="stats-modal-btn-close" id="btnConfirmClose">收起手帐</button>
+      </div>
     </div>
   </div>
 
@@ -260,7 +419,7 @@
     <button class="btn" id="btnRight">往右走 ▶</button>
   </div>
 
-  <div class="tips">键盘快捷键：A/D 移动 | M 喵喵叫 | 空格 互动 | F 挠他</div>
+  <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -956,30 +1115,69 @@ dialog.addEventListener('click', () => {
     let totalMeowCount = parseInt(localStorage.getItem('cat_meow_count') || '0', 10);
     let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
 
-    const elStatMeow = document.getElementById('statMeow');
-    const elStatKO = document.getElementById('statKO');
+    const modalStatMeow = document.getElementById('modalStatMeow');
+    const modalStatKO = document.getElementById('modalStatKO');
+    const statsFlavor = document.getElementById('statsFlavor');
+    const statsModal = document.getElementById('statsModal');
+    const btnOpenStats = document.getElementById('btnOpenStats');
+    const btnCloseStats = document.getElementById('btnCloseStats');
+    const btnConfirmClose = document.getElementById('btnConfirmClose');
 
-    function updateStatsUI(bumpMeow, bumpKO) {
-      if (elStatMeow) {
-        elStatMeow.textContent = totalMeowCount;
-        if (bumpMeow) {
-          elStatMeow.classList.remove('bump');
-          void elStatMeow.offsetWidth;
-          elStatMeow.classList.add('bump');
-          setTimeout(() => elStatMeow.classList.remove('bump'), 220);
-        }
-      }
-      if (elStatKO) {
-        elStatKO.textContent = totalKoCount;
-        if (bumpKO) {
-          elStatKO.classList.remove('bump');
-          void elStatKO.offsetWidth;
-          elStatKO.classList.add('bump');
-          setTimeout(() => elStatKO.classList.remove('bump'), 220);
-        }
+    function updateFlavorText() {
+      if (!statsFlavor) return;
+      if (totalKoCount === 0 && totalMeowCount === 0) {
+        statsFlavor.innerText = "“小猫刚迈开爪爪踏入莱顿运河畔……快去喵一声，或者挠挠长椅上的赫尔曼看看反应吧！”";
+      } else if (totalKoCount === 0) {
+        statsFlavor.innerText = `“沿河一共喵了 ${totalMeowCount} 声，阿尔瓦正在静静听着呢。赫尔曼今天看起来还挺悠闲的，不去跟他‘打个招呼’吗？”`;
+      } else if (totalKoCount < 5) {
+        statsFlavor.innerText = `“赫尔曼已经被你放倒了 ${totalKoCount} 次，白手帕都快挥出火星了！阿尔瓦一边叹气，一边偷偷在背后给你塞了块华夫饼。”`;
+      } else {
+        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮公司首席物理学家终结者’称号非你莫属！赫尔曼现在一听到猫爪声就会条件反射捂紧领口。”`;
       }
     }
+
+    function updateStatsUI(bumpMeow, bumpKO) {
+      if (modalStatMeow) {
+        modalStatMeow.textContent = totalMeowCount;
+        if (bumpMeow) {
+          modalStatMeow.classList.remove('bump');
+          void modalStatMeow.offsetWidth;
+          modalStatMeow.classList.add('bump');
+          setTimeout(() => modalStatMeow.classList.remove('bump'), 220);
+        }
+      }
+      if (modalStatKO) {
+        modalStatKO.textContent = totalKoCount;
+        if (bumpKO) {
+          modalStatKO.classList.remove('bump');
+          void modalStatKO.offsetWidth;
+          modalStatKO.classList.add('bump');
+          setTimeout(() => modalStatKO.classList.remove('bump'), 220);
+        }
+      }
+      updateFlavorText();
+    }
     updateStatsUI(false, false);
+
+    function openStatsModal() {
+      if (statsModal) {
+        updateStatsUI(false, false);
+        statsModal.classList.add('active');
+      }
+    }
+
+    function closeStatsModal() {
+      if (statsModal) statsModal.classList.remove('active');
+    }
+
+    if (btnOpenStats) btnOpenStats.addEventListener('click', openStatsModal);
+    if (btnCloseStats) btnCloseStats.addEventListener('click', closeStatsModal);
+    if (btnConfirmClose) btnConfirmClose.addEventListener('click', closeStatsModal);
+    if (statsModal) {
+      statsModal.addEventListener('click', (e) => {
+        if (e.target === statsModal) closeStatsModal();
+      });
+    }
 
     function catMeow() {
       catAction = 'meow';
@@ -1083,6 +1281,11 @@ dialog.addEventListener('click', () => {
       if (e.key === ' ' || e.key === 'Enter') interact();
       if (e.key === 'm' || e.key === 'M') catMeow();
       if (e.key === 'f' || e.key === 'F' || e.key === 'x' || e.key === 'X') scratchAction();
+      if (e.key === 't' || e.key === 'T') {
+        if (statsModal && statsModal.classList.contains('active')) closeStatsModal();
+        else openStatsModal();
+      }
+      if (e.key === 'Escape') closeStatsModal();
     });
     window.addEventListener('keyup', e => {
       keys[e.key] = false;
