@@ -1401,40 +1401,48 @@ let catAction = 'idle';
         );
 
         // ===== 小猫荣耀专属装备渲染（根据猫咪姿态智能对齐） =====
-        const hasGoldTailRing = totalBossKoCount >= 1 || unlockedAchSet.has('gold_1');
-        const hasDiamondTailRing = totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1');
+        const hasGoldBowtie = totalBossKoCount >= 1 || unlockedAchSet.has('gold_1');
+        const hasDiamondBowtie = totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1');
         const hasDiamondCrown = totalDiamondKoCount >= 10 || unlockedAchSet.has('diamond_10');
 
-        // 计算猫咪不同动作下的尾巴骨骼锚点
-        // row 6: 行走(侧面); row 47: 抓挠(侧面); row 28/36: 站立/梳毛(正面，尾巴卷在身侧右后方)
-        let tailX = 8, tailY = -8;
-        if (row === 6) {
-          tailX = -7;
-          tailY = -13;
-        } else if (row === 47) {
-          tailX = -8;
-          tailY = -12;
-        }
+        // 领结锚点：坐姿 sprite(16,15) → 本地 (0,-11)；侧身 row 6/47 sprite(21,19) → 本地 (5,-7)
+        const sidePose = (row === 6 || row === 47);
+        const bowX = sidePose ? 5 : 0;
+        const bowY = sidePose ? -7 : -11;
 
-        // 1. 尾巴环渲染：优先展示更稀有的钻石尾巴环，未获得钻石时展示黄金尾巴环
-        if (hasDiamondTailRing) {
-          // 💎 闪亮钻石尾巴环（璀璨清透的浅蓝钻光）
-          px(tailX - 1, tailY - 1, 3, 2, '#38bdf8');
-          px(tailX, tailY - 1, 1, 1, '#ffffff');
-          px(tailX - 1, tailY, 1, 1, '#0284c7');
-          px(tailX + 1, tailY, 1, 1, '#bae6fd');
+        // 1. 领结渲染：优先展示更稀有的钻石领结，未获得钻石时展示黄金领结
+        const drawBowtie = (deep, mid, light, knot) => {
+          // 左翼
+          px(bowX - 3, bowY - 1, 1, 1, mid);
+          px(bowX - 3, bowY, 1, 1, light);
+          px(bowX - 3, bowY + 1, 1, 1, mid);
+          px(bowX - 2, bowY - 1, 1, 1, light);
+          px(bowX - 2, bowY, 1, 1, deep);
+          px(bowX - 2, bowY + 1, 1, 1, light);
+          px(bowX - 1, bowY, 1, 1, deep);
+          // 右翼
+          px(bowX + 3, bowY - 1, 1, 1, mid);
+          px(bowX + 3, bowY, 1, 1, light);
+          px(bowX + 3, bowY + 1, 1, 1, mid);
+          px(bowX + 2, bowY - 1, 1, 1, light);
+          px(bowX + 2, bowY, 1, 1, deep);
+          px(bowX + 2, bowY + 1, 1, 1, light);
+          px(bowX + 1, bowY, 1, 1, deep);
+          // 结心 + 偶尔的碎钻反光
+          px(bowX, bowY - 1, 1, 1, '#ffffff');
+          px(bowX, bowY, 1, 1, '#ffffff');
+          px(bowX, bowY + 1, 1, 1, knot);
           if (Math.random() < 0.28) {
-            px(tailX - 1 + Math.floor(Math.random() * 3), tailY - 2 + Math.floor(Math.random() * 3), 1, 1, '#ffffff');
+            px(bowX + (Math.random() < 0.5 ? -3 : 3), bowY - 2, 1, 1, '#ffffff');
           }
-        } else if (hasGoldTailRing) {
-          // ✨ 璀璨黄金尾巴环（击败黄金赫尔曼掉落，温暖耀眼的纯金色泽）
-          px(tailX - 1, tailY - 1, 3, 2, '#f59e0b');
-          px(tailX, tailY - 1, 1, 1, '#fef08a');
-          px(tailX - 1, tailY, 1, 1, '#b45309');
-          px(tailX + 1, tailY, 1, 1, '#fde047');
-          if (Math.random() < 0.28) {
-            px(tailX - 1 + Math.floor(Math.random() * 3), tailY - 2 + Math.floor(Math.random() * 3), 1, 1, '#ffffff');
-          }
+        };
+
+        if (hasDiamondBowtie) {
+          // 💎 纯钻璀璨领结（清透浅蓝钻光）
+          drawBowtie('#0284c7', '#38bdf8', '#bae6fd', '#d3adf7');
+        } else if (hasGoldBowtie) {
+          // ✨ 璀璨黄金领结（温暖耀眼的纯金色泽）
+          drawBowtie('#b45309', '#f59e0b', '#fde047', '#fef08a');
         }
 
         // 2. 纯钻璀璨小王冠 (猫猫大王专属皇冠，佩戴在额头头顶)
@@ -1603,9 +1611,9 @@ dialog.addEventListener('click', () => {
       {
         id: 'gold_1',
         icon: '✨👑',
-        name: '纯金粉碎者·黄金尾巴环',
+        name: '纯金粉碎者·黄金领结',
         desc: '初次击破 500HP 黄金大BOSS·赫尔曼',
-        reward: '专属装备：【✨ 璀璨黄金尾巴环】',
+        reward: '专属装备：【✨ 璀璨黄金领结】',
         check: () => totalBossKoCount >= 1,
         progress: () => `${Math.min(totalBossKoCount, 1)}/1`
       },
@@ -1614,7 +1622,7 @@ dialog.addEventListener('click', () => {
         icon: '💍',
         name: '莫氏硬度崩坏',
         desc: '击碎 1000HP 钻石大BOSS·赫尔曼',
-        reward: '专属装备：【💎 闪亮钻石尾巴环】',
+        reward: '专属装备：【💎 纯钻璀璨领结】',
         check: () => totalDiamondKoCount >= 1,
         progress: () => `${Math.min(totalDiamondKoCount, 1)}/1`
       },
