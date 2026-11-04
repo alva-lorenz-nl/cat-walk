@@ -1000,8 +1000,8 @@
 
   <div class="time-controls">
     <span>🕰</span>
-    <button class="btn-time" data-step="-168" data-ach="time_jump_30d" style="display:none">⏪ 7天</button>
-    <button class="btn-time" data-step="-24" data-ach="time_jump_1d" style="display:none">⏪ 1天</button>
+    <button class="btn-time" data-step="-168" data-ach="time_back_30d" style="display:none">⏪ 7天</button>
+    <button class="btn-time" data-step="-24" data-ach="time_back_1d" style="display:none">⏪ 1天</button>
     <button class="btn-time" data-step="-1">⏪ 1时</button>
     <span class="time-now" id="timeNow">跟随现实</span>
     <button class="btn-time" data-step="1">1时 ⏩</button>
@@ -1483,6 +1483,8 @@
     let timeAnim = null;          // { from, to, t0, dur }
     let timeSkipTotalHours = 0;   // 累计手动跳过的小时数
     let timeSkipMaxHours = 0;     // 单次跳过的最大值
+    let timeBackTotalHours = 0;   // 累计往回拨的小时数
+    let timeBackMinOffset = 0;    // 曾拨到过的最早偏移（负数）
     try {
       const v = parseFloat(localStorage.getItem('cat_time_offset') || '0');
       if (!isNaN(v)) { timeOffsetHours = v; timeTargetHours = v; }
@@ -1490,6 +1492,11 @@
       if (!isNaN(t)) timeSkipTotalHours = t;
       const m = parseFloat(localStorage.getItem('cat_time_skip_max') || '0');
       if (!isNaN(m)) timeSkipMaxHours = m;
+      const bt = parseFloat(localStorage.getItem('cat_time_back_total') || '0');
+      if (!isNaN(bt)) timeBackTotalHours = bt;
+      const bm = parseFloat(localStorage.getItem('cat_time_back_min') || '0');
+      if (!isNaN(bm)) timeBackMinOffset = bm;
+      if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
     } catch (e) {}
 
     function mod24(h) {
@@ -1589,6 +1596,8 @@
         localStorage.setItem('cat_time_offset', String(timeTargetHours));
         localStorage.setItem('cat_time_skip_total', String(timeSkipTotalHours));
         localStorage.setItem('cat_time_skip_max', String(timeSkipMaxHours));
+        localStorage.setItem('cat_time_back_total', String(timeBackTotalHours));
+        localStorage.setItem('cat_time_back_min', String(timeBackMinOffset));
       } catch (e) {}
     }
 
@@ -1641,6 +1650,10 @@
       timeSkipTotalHours += absStep;
       if (absStep > timeSkipMaxHours) timeSkipMaxHours = absStep;
       timeTargetHours += step;
+      if (step < 0) {
+        timeBackTotalHours += absStep;
+        if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+      }
       saveTimeState();
       startTimeAnim();
       refreshTimeUI();
@@ -2908,6 +2921,56 @@ dialog.addEventListener('click', () => {
         reward: '称号：时间的旁观者',
         check: () => timeSkipTotalHours >= 8760,
         progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 365)}/365天`
+      },
+      {
+        id: 'time_back_first',
+        icon: '🌊',
+        hidden: true,
+        name: '时光倒流',
+        desc: '第一次把手动拨动的时针往回转——运河的水忽然安静了一瞬',
+        reward: '称号：逆着光走的人',
+        check: () => timeBackTotalHours >= 1,
+        progress: () => `${Math.min(Math.floor(timeBackTotalHours), 1)}/1时`
+      },
+      {
+        id: 'time_back_1d',
+        icon: '🌅',
+        hidden: true,
+        name: '昨日重现',
+        desc: '累计往回拨过整整一天，把昨天的日光又借了回来',
+        reward: '解锁：⏪ 一键倒回 1 天',
+        check: () => timeBackTotalHours >= 24,
+        progress: () => `${Math.min(Math.floor(timeBackTotalHours / 24), 1)}/1天`
+      },
+      {
+        id: 'time_back_30d',
+        icon: '🕯',
+        hidden: true,
+        name: '溯洄而上',
+        desc: '累计倒拨三十天，逆流而上，把一整个月的水声都听了一遍',
+        reward: '解锁：⏪ 一键倒回 7 天',
+        check: () => timeBackTotalHours >= 720,
+        progress: () => `${Math.min(Math.floor(timeBackTotalHours / 24), 30)}/30天`
+      },
+      {
+        id: 'time_back_100d',
+        icon: '🧭',
+        hidden: true,
+        name: '逆流者',
+        desc: '累计倒拨一百天，小猫踩着水波往回走，从没回头',
+        reward: '称号：逆着运河走',
+        check: () => timeBackTotalHours >= 2400,
+        progress: () => `${Math.min(Math.floor(timeBackTotalHours / 24), 100)}/100天`
+      },
+      {
+        id: 'time_back_year',
+        icon: '📜',
+        hidden: true,
+        name: '回到那年秋天',
+        desc: '把运河畔的时间拨回过去整整一年，旧日的风又吹了一遍',
+        reward: '称号：时间的逆行者',
+        check: () => timeBackMinOffset <= -8760,
+        progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 365)}/365天`
       }
     ];
 
