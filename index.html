@@ -506,7 +506,103 @@
       color: #635b54;
       pointer-events: none;
     }
+
+    /* 🎒 道具栏与衣橱样式 */
+    .wardrobe-section {
+      margin-top: 14px;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid #4a3e35;
+      border-radius: 8px;
+      padding: 10px 12px;
+      text-align: left;
+    }
+    .wardrobe-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      border-bottom: 1px dashed #4a3e35;
+      padding-bottom: 5px;
+    }
+    .wardrobe-title {
+      font-size: 13px;
+      font-weight: bold;
+      color: #ffd591;
+    }
+    .wardrobe-badge {
+      font-size: 11px;
+      background: #3c2f25;
+      color: #d4b182;
+      padding: 2px 8px;
+      border-radius: 10px;
+      border: 1px solid #5a4b3d;
+    }
+    .wardrobe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 8px;
+      max-height: 150px;
+      overflow-y: auto;
+      padding-right: 2px;
+    }
+    .wardrobe-item-card {
+      background: #2a221b;
+      border: 1px solid #46372d;
+      border-radius: 6px;
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.15s ease;
+      cursor: pointer;
+      user-select: none;
+    }
+    .wardrobe-item-card:hover:not(.locked) {
+      border-color: #8c6b45;
+      background: #332920;
+    }
+    .wardrobe-item-card.locked {
+      opacity: 0.45;
+      filter: grayscale(0.8);
+      cursor: not-allowed;
+    }
+    .wardrobe-item-card.equipped {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.15);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+    }
+    .wardrobe-item-top {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .wardrobe-item-icon {
+      font-size: 16px;
+    }
+    .wardrobe-item-name {
+      font-size: 11px;
+      font-weight: bold;
+      color: #f3eae0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .wardrobe-item-desc {
+      font-size: 10px;
+      color: #b5a999;
+      line-height: 1.3;
+    }
+    .wardrobe-item-status {
+      font-size: 10px;
+      color: #a89f91;
+      margin-top: 2px;
+    }
+    .wardrobe-item-status.on {
+      color: #52c41a;
+      font-weight: bold;
+    }
   </style>
+  <script src="cat_walk_dialogues.js"></script>
 </head>
 <body>
 
@@ -584,7 +680,7 @@
     <button class="btn" id="btnRight">往右走 ▶</button>
   </div>
 
-  <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩</div>
+  <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T/I 手帐与衣橱</div>
 
   <script>
     const canvas = document.getElementById('gameCanvas');
@@ -669,57 +765,27 @@
       });
     }
 
-    // 赫尔曼对话
-    const hermanDialogues = [
-      "赫尔曼瞥了你一眼，从深红马甲口袋里摸出一块热腾腾的华夫饼塞给你：『阿尔瓦那家伙又带小猫出来吹冷风了？拿着，少多嘴。』",
-      "秋风卷落运河边的黄叶。赫尔曼抚平领口处微皱的绿宝石褶领巾，轻哼一声：『哪来的小猫崽子，别把爪印蹭我条纹外袍上。』",
-      "赫尔曼翻了翻手里的算法手稿，低头对你嘀咕：『喂，小猫，跟阿尔瓦说一声，今晚少喝点冰球古典酒，多喝热茶。』"
-    ];
+    // =========================================================================
+    // 💬 对话文案引用区（已解耦拆分至 cat_walk_dialogues.js）
+    // 便于后续经常添加、修改或本地化文本，无需触动底层渲染与物理碰撞核心逻辑
+    // =========================================================================
+    const CD = window.CatWalkDialogues || {};
+    const hermanDialogues = CD.hermanDialogues || [];
     let hermanDialogIndex = 0;
 
-    // 阿尔瓦对话
-    const alvaDialogues = [
-      "阿尔瓦俯下身轻轻揉了揉你的耳尖：『运河边的风有点凉，冷的话就凑近一点暖暖爪子。』",
-      "阿尔瓦把手里的南瓜拿铁凑到你面前晃了晃，眼底尽是温和的笑意：『闻闻看，加了肉桂和一点点甜奶泡，回去给你带点点心好不好？』",
-      "阿尔瓦温和地看着你探过来的小爪子：『在外面散步开心吗？看到赫尔曼的马甲被你抓掉扣子，我都差点没忍住笑出来。』",
-      "阿尔瓦微微弯起眼睛，长长的灰白马尾垂在肩头：『乖，走累了就在长椅旁歇歇脚，别着凉了。』"
-    ];
+    const alvaDialogues = CD.alvaDialogues || [];
     let alvaDialogIndex = 0;
 
-    const scratchDialogues = [
-      "【啪嚓！】小猫飞扑上去狠抓！赫尔曼深红马甲上的纽扣崩飞了一颗！赫尔曼咬牙切齿：『阿尔瓦！管管你惯坏的小畜生！』",
-      "【喵呜抓！】小猫亮爪！赫尔曼手里的图纸被划破，绿宝石领巾歪在一边：『嘶……这领巾是定制的！小猫崽子你给我松爪！』",
-      "【连续猫猫拳！】赫尔曼狼狈地用厚厚的研究手稿挡住脸：『别挠了！华夫饼全给你！明天我就去找阿尔瓦算账！』",
-      "阿尔瓦在一旁忍着笑，悄悄递给你一个小鱼干：『咳……好啦小猫，等下赫尔曼真要被气得冒烟了。』"
-    ];
+    const scratchDialogues = CD.scratchDialogues || [];
     let scratchIndex = 0;
 
-    const bossScratchDialogues = [
-      "【黄金霸体！金属火花迸溅！】小猫尖爪挠在赫尔曼闪烁纯金光芒的西装翻领上，发出叮叮当当的金石声！赫尔曼抱臂狂笑：『哈！这可是黄金永动合金纤维！小猫崽子，你的肉垫发麻了吧！』",
-      "【纯金重压反震！】猫猫疯狂连抓！赫尔曼头顶的金冠晃了晃，嘴角得意上扬：『在500血的究极黄金算力面前，爪击不过是抓痒！阿尔瓦，看见了吗？这就是科技的力量！』",
-      "【狂挠黄金大BOSS！】赫尔曼纯金马甲被刮出一道细细的金粉流光：『喂喂！别挠我的纯金领针！那可是永动轮特制限定版！』",
-      "阿尔瓦在一旁喝了口拿铁，忍不住弯起眼睛小声提醒：『小猫加油，他的黄金涂层虽然硬，但动作好像也变迟钝了呢……』"
-    ];
+    const bossScratchDialogues = CD.bossScratchDialogues || [];
     let bossScratchIndex = 0;
 
-    const diamondScratchDialogues = [
-      "【💎 莫氏硬度10暴击反震！铿锵——】小猫肉垫在晶莹剔透的钻石西装上刺溜打滑！赫尔曼高傲推眼镜冷笑：『小猫崽子，这可是莫氏硬度最高级的全结晶钻石超导装甲！1000血量，挠得破算我输！』",
-      "【💎 璀璨棱镜折射！】猫爪乱挥！赫尔曼整套冰蓝钻光西服折射出七彩耀目光斑，闪得小猫眼睛眯成一条线：『哈哈哈哈！被永动轮终极钻石折射率闪瞎了吧！阿尔瓦你别光顾着看，记录实验数据啊！』",
-      "【💎 疯狂暴刮钻石结晶！】赫尔曼头顶的纯钻璀璨皇冠晃出漫天冰晶星尘：『嗷！别对着钻石领带夹死抠！那一颗克拉数抵得上莱顿三个实验室的预算！』",
-      "阿尔瓦单手扶着金丝眼镜，另一手递给小猫一块肉干温和笑道：『小猫乖，别急。钻石虽硬但脆性大，找准结晶纹理挠，他很快就要求饶了。』"
-    ];
+    const diamondScratchDialogues = CD.diamondScratchDialogues || [];
     let diamondScratchIndex = 0;
 
-    // 猫咪台词
-    const catMeows = [
-      "喵呜~（尾巴得意地翘了起来）",
-      "赫尔曼的马甲看起来特别好磨爪子！",
-      "呼噜呼噜……（惬意地踩了踩落叶）",
-      "喵！要吃刚出炉的南瓜华夫饼~",
-      "赫尔曼又在皱眉头了，喵呜！",
-      "运河边的风好舒服呀~",
-      "喵嗷~（骄傲地抖了抖小耳朵）"
-    ];
+    const catMeows = CD.catMeows || [];
     let meowIndex = 0;
 
     let catBubble = {
@@ -1400,36 +1466,83 @@ let catAction = 'idle';
           -16, -26, 32, 32
         );
 
-        // ===== 小猫荣耀专属装备渲染（根据猫咪姿态智能对齐） =====
-        const hasGoldBowtie = totalBossKoCount >= 1 || unlockedAchSet.has('gold_1');
-        const hasDiamondBowtie = totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1');
-        const hasDiamondCrown = totalDiamondKoCount >= 10 || unlockedAchSet.has('diamond_10');
+        // ===== 小猫荣耀专属装备渲染（支持在衣橱中自由穿戴/卸下） =====
+        const hasGoldUnlocked = (totalBossKoCount >= 1 || unlockedAchSet.has('gold_1'));
+        const hasDiamondBowtieUnlocked = (totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1'));
+        const hasDiamondCrownUnlocked = (totalDiamondKoCount >= 10 || unlockedAchSet.has('diamond_10'));
+
+        const equippedBowtie = (wardrobeEquipped && wardrobeEquipped.bowtie) || 'none';
+        const hasDiamondCrown = Boolean(wardrobeEquipped && wardrobeEquipped.crown && hasDiamondCrownUnlocked);
+        const hasDiamondBowtie = (equippedBowtie === 'diamond' && hasDiamondBowtieUnlocked);
+        const hasGoldBowtie = (equippedBowtie === 'gold' && hasGoldUnlocked);
 
         // 领结锚点：
         // 正面坐姿：鼻尖正对 x=15 (本地 -1), y=15 (本地 -11)
-        // 侧身 (row 6 / row 47 等)：领结侧向透视，呈精致小三角
+        // 侧身 (row 6 / row 47 等)：领结侧向透视，紧贴下颌与前颈线，跟随走动起伏
         const sidePose = (row === 6 || row === 47);
-        const bowX = sidePose ? 4 : -1;
-        const bowY = sidePose ? -7 : -11;
+        let bowOffsetX = 0;
+        let bowOffsetY = 0;
+        if (row === 6) {
+          // 8帧走动时头部微幅起伏动态校准
+          const walkOffsets = [
+            [0, 0],   // 0
+            [-1, 0],  // 1
+            [0, 0],   // 2
+            [-1, 0],  // 3
+            [0, 0],   // 4
+            [-1, 0],  // 5
+            [0, 0],   // 6
+            [-1, 0]   // 7
+          ];
+          const off = walkOffsets[frame % 8] || [0, 0];
+          bowOffsetX = off[0];
+          bowOffsetY = off[1];
+        } else if (row === 47) {
+          // 挠人前倾动作动态校准
+          const scratchOffsets = [
+            [0, 0],
+            [2, 0],
+            [3, 0],
+            [3, 0],
+            [3, 0],
+            [3, 0],
+            [2, 0]
+          ];
+          const off = scratchOffsets[frame % 7] || [0, 0];
+          bowOffsetX = off[0];
+          bowOffsetY = off[1];
+        }
+        const bowX = sidePose ? (5 + bowOffsetX) : -1;
+        const bowY = sidePose ? (-10 + bowOffsetY) : -11;
 
-        // 1. 领结渲染：优先展示更稀有的钻石领结，未获得钻石时展示黄金领结
-        const drawBowtie = (deep, mid, light, knot) => {
+        // 1. 领结与项圈渲染：环绕脖颈一圈，前挂精巧领结
+        const drawBowtie = (deep, mid, light, knot, bandDark, bandLight) => {
           if (sidePose) {
-            // 侧身状态：领结随猫咪转向，呈现侧向小三角透视
-            // 颈圈结扣
-            px(bowX - 1, bowY, 1, 1, '#ffffff');
-            // 小三角形侧翼
-            px(bowX, bowY - 1, 1, 1, light);
-            px(bowX, bowY, 1, 1, deep);
-            px(bowX, bowY + 1, 1, 1, mid);
-            px(bowX + 1, bowY, 1, 1, light);
-            px(bowX + 1, bowY + 1, 1, 1, mid);
+            // 侧身状态：项圈从颈后斜向环绕至喉前，前端系挂透视领结
+            // 环颈项圈带（从后颈背沿斜下方环绕至喉咙前）
+            px(bowX - 4, bowY - 2, 1, 1, bandDark);
+            px(bowX - 3, bowY - 2, 1, 1, bandLight);
+            px(bowX - 2, bowY - 1, 1, 1, bandDark);
+            px(bowX - 1, bowY - 1, 1, 1, bandLight);
+            px(bowX, bowY, 1, 1, bandDark);
+
+            // 前方领结本体（结心扣眼 + 侧向立体蝴蝶结双翼）
+            px(bowX + 1, bowY, 1, 1, '#ffffff'); // 结心高光
+            px(bowX + 1, bowY + 1, 1, 1, light);
+            px(bowX + 2, bowY - 1, 1, 1, light); // 上翼
+            px(bowX + 2, bowY, 1, 1, mid);
+            px(bowX + 2, bowY + 1, 1, 1, deep);  // 下翼
+            px(bowX + 3, bowY, 1, 1, deep);      // 翼尖
+
             // 细微反光
             if (Math.random() < 0.25) {
-              px(bowX + 1, bowY - 1, 1, 1, '#ffffff');
+              px(bowX + 2, bowY - 1, 1, 1, '#ffffff');
             }
           } else {
-            // 正面状态：双翼平展蝴蝶结，往左微移1像素与鼻尖及胸口完美居中
+            // 正面状态：项圈左右环绕颈部，正中端正佩戴蝴蝶结
+            px(bowX - 4, bowY - 1, 3, 1, bandDark);
+            px(bowX + 2, bowY - 1, 3, 1, bandDark);
+
             // 左翼
             px(bowX - 3, bowY - 1, 1, 1, mid);
             px(bowX - 3, bowY, 1, 1, light);
@@ -1457,11 +1570,11 @@ let catAction = 'idle';
         };
 
         if (hasDiamondBowtie) {
-          // 💎 纯钻璀璨领结（清透浅蓝钻光）
-          drawBowtie('#0284c7', '#38bdf8', '#bae6fd', '#d3adf7');
+          // 💎 纯钻项圈领结（清透浅蓝钻光项圈带 + 闪钻领结）
+          drawBowtie('#0284c7', '#38bdf8', '#bae6fd', '#d3adf7', '#0e7490', '#38bdf8');
         } else if (hasGoldBowtie) {
-          // ✨ 璀璨黄金领结（温暖耀眼的纯金色泽）
-          drawBowtie('#b45309', '#f59e0b', '#fde047', '#fef08a');
+          // ✨ 璀璨黄金项圈领结（温暖金色皮革带 + 纯金领结）
+          drawBowtie('#b45309', '#f59e0b', '#fde047', '#fef08a', '#92400e', '#f59e0b');
         }
 
         // 2. 纯钻璀璨小王冠 (猫猫大王专属皇冠，佩戴在额头头顶)
@@ -1574,87 +1687,34 @@ dialog.addEventListener('click', () => {
 
     function updateFlavorText() {
       if (!statsFlavor) return;
-      if (totalDiamondKoCount > 0) {
-        statsFlavor.innerText = `“神话降临！你竟轰碎了 ${totalDiamondKoCount} 次 1000HP 的【💎 钻石大BOSS·赫尔曼】！莫氏硬度10的终极装甲在你肉垫下不堪一击！阿尔瓦正温柔地用丝帕帮你擦爪爪呢～”`;
-      } else if (totalBossKoCount > 0) {
-        statsFlavor.innerText = `“不可思议！你已经击破了 ${totalBossKoCount} 次 500HP 的【黄金大BOSS·赫尔曼】！连纯金永动西装都被你挠成碎金粉了，下一次说不定会遭遇莫氏硬度10的【钻石赫尔曼】哦！”`;
-      } else if (totalKoCount === 0 && totalMeowCount === 0) {
-        statsFlavor.innerText = "“小猫刚迈开爪爪踏入莱顿运河畔……快去喵一声，或者挠挠长椅上的赫尔曼看看反应吧！”";
-      } else if (totalKoCount === 0) {
-        statsFlavor.innerText = `“沿河一共喵了 ${totalMeowCount} 声，阿尔瓦正在静静听着呢。赫尔曼今天看起来还挺悠闲的，不去跟他‘打个招呼’吗？”`;
-      } else if (totalKoCount < 5) {
-        statsFlavor.innerText = `“赫尔曼已经被你放倒了 ${totalKoCount} 次，白手帕都快挥出火星了！阿尔瓦一边叹气，一边偷偷在背后给你塞了块华夫饼。”`;
-      } else {
-        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮公司首席物理学家终结者’称号非你莫属！继续投喂华夫饼，去挑战黄金甚至钻石大BOSS吧！”`;
+      if (CD.getFlavorText) {
+        statsFlavor.innerText = CD.getFlavorText({
+          diamondKo: totalDiamondKoCount,
+          bossKo: totalBossKoCount,
+          ko: totalKoCount,
+          meow: totalMeowCount
+        });
       }
     }
 
-    // ===== 漫步手帐 · 成就系统 =====
-    const achievementsList = [
-      {
-        id: 'meow_1',
-        icon: '💬',
-        name: '初试啼声',
-        desc: '在莱顿运河畔轻轻喵叫 1 次',
-        reward: '专属：解锁日常软萌喵叫声',
-        check: () => totalMeowCount >= 1,
-        progress: () => `${Math.min(totalMeowCount, 1)}/1`
-      },
-      {
-        id: 'meow_20',
-        icon: '📢',
-        name: '运河大喇叭',
-        desc: '累计向河畔喵叫达到 20 声',
-        reward: '全运河的鹅和赫尔曼都醒了',
-        check: () => totalMeowCount >= 20,
-        progress: () => `${Math.min(totalMeowCount, 20)}/20`
-      },
-      {
-        id: 'ko_1',
-        icon: '🐾',
-        name: '第一记肉垫',
-        desc: '初次将长椅上的赫尔曼击倒',
-        reward: '获得：赫尔曼缴械投降的白手帕',
-        check: () => totalKoCount >= 1,
-        progress: () => `${Math.min(totalKoCount, 1)}/1`
-      },
-      {
-        id: 'ko_5',
-        icon: '⚡',
-        name: '永动轮克星',
-        desc: '累计击倒赫尔曼 5 次',
-        reward: '获得：阿尔瓦私藏的特制焦糖华夫饼',
-        check: () => totalKoCount >= 5,
-        progress: () => `${Math.min(totalKoCount, 5)}/5`
-      },
-      {
-        id: 'gold_1',
-        icon: '✨👑',
-        name: '纯金粉碎者·黄金领结',
-        desc: '初次击破 500HP 黄金大BOSS·赫尔曼',
-        reward: '专属装备：【✨ 璀璨黄金领结】',
-        check: () => totalBossKoCount >= 1,
-        progress: () => `${Math.min(totalBossKoCount, 1)}/1`
-      },
-      {
-        id: 'diamond_1',
-        icon: '💍',
-        name: '莫氏硬度崩坏',
-        desc: '击碎 1000HP 钻石大BOSS·赫尔曼',
-        reward: '专属装备：【💎 纯钻璀璨领结】',
-        check: () => totalDiamondKoCount >= 1,
-        progress: () => `${Math.min(totalDiamondKoCount, 1)}/1`
-      },
-      {
-        id: 'diamond_10',
-        icon: '👑💎',
-        name: '十战十捷·猫猫大王',
-        desc: '累计击败钻石赫尔曼达到 10 次！',
-        reward: '至高荣耀：【👑 纯钻璀璨小王冠】',
-        check: () => totalDiamondKoCount >= 10,
-        progress: () => `${Math.min(totalDiamondKoCount, 10)}/10`
-      }
-    ];
+    // =========================================================================
+    // 🏆 漫步手帐 · 成就与装备系统（数据源自 cat_walk_dialogues.js）
+    // =========================================================================
+    const getAchDefs = () => {
+      const defs = (CD.achievementsList || []);
+      const stats = {
+        meow: totalMeowCount,
+        ko: totalKoCount,
+        bossKo: totalBossKoCount,
+        diamondKo: totalDiamondKoCount
+      };
+      return defs.map(item => ({
+        ...item,
+        check: () => item.checkCondition(stats),
+        progress: () => item.getProgress(stats)
+      }));
+    };
+    let achievementsList = getAchDefs();
 
     let unlockedAchSet = new Set();
     try {
@@ -1685,6 +1745,111 @@ dialog.addEventListener('click', () => {
         });
       }
       renderAchievementsUI();
+    }
+
+    // =========================================================================
+    // 🎒 道具栏与衣橱（Wardrobe System）
+    // =========================================================================
+    let wardrobeEquipped = { bowtie: 'diamond', crown: true };
+    try {
+      const savedEquip = JSON.parse(localStorage.getItem('cat_wardrobe_equipped') || '{}');
+      if (savedEquip && typeof savedEquip === 'object') {
+        wardrobeEquipped = Object.assign(wardrobeEquipped, savedEquip);
+      }
+    } catch(e) {}
+
+    // 如果还没有达成对应成就，自动回退
+    function sanitizeWardrobe() {
+      const hasGold = (totalBossKoCount >= 1 || unlockedAchSet.has('gold_1'));
+      const hasDiamond = (totalDiamondKoCount >= 1 || unlockedAchSet.has('diamond_1'));
+      if (wardrobeEquipped.bowtie === 'diamond' && !hasDiamond) {
+        wardrobeEquipped.bowtie = hasGold ? 'gold' : 'none';
+      } else if (wardrobeEquipped.bowtie === 'gold' && !hasGold) {
+        wardrobeEquipped.bowtie = 'none';
+      }
+    }
+
+    function toggleEquip(itemId) {
+      const item = (CD.wardrobeItems || []).find(it => it.id === itemId);
+      if (!item) return;
+
+      const stats = {
+        meow: totalMeowCount,
+        ko: totalKoCount,
+        bossKo: totalBossKoCount,
+        diamondKo: totalDiamondKoCount
+      };
+
+      if (!item.unlockCheck(stats, unlockedAchSet)) {
+        showDialog(`【🔒 尚未解锁】${item.name}：${item.desc}`, { dwell: 4000 });
+        return;
+      }
+
+      if (item.type === 'bowtie') {
+        if (wardrobeEquipped.bowtie === item.equipKey) {
+          wardrobeEquipped.bowtie = 'none';
+          showDialog(`【🎒 卸下装备】取下了${item.name}。`);
+        } else {
+          wardrobeEquipped.bowtie = item.equipKey;
+          showDialog(`【✨ 穿戴成功】小猫系上了${item.name}！优雅又神气～`);
+        }
+      } else if (item.type === 'crown') {
+        wardrobeEquipped.crown = !wardrobeEquipped.crown;
+        showDialog(wardrobeEquipped.crown ? `【👑 穿戴成功】小猫戴上了${item.name}！今日巡视运河～` : `【🎒 卸下装备】取下了${item.name}。`);
+      } else if (item.type === 'consumable') {
+        showDialog(item.useText || `【使用道具】${item.name}`);
+      }
+
+      try {
+        localStorage.setItem('cat_wardrobe_equipped', JSON.stringify(wardrobeEquipped));
+      } catch(e) {}
+      renderWardrobeUI();
+    }
+
+    function renderWardrobeUI() {
+      const listEl = document.getElementById('wardrobeList');
+      const badgeEl = document.getElementById('wardrobeBadge');
+      if (!listEl) return;
+
+      const items = CD.wardrobeItems || [];
+      const stats = {
+        meow: totalMeowCount,
+        ko: totalKoCount,
+        bossKo: totalBossKoCount,
+        diamondKo: totalDiamondKoCount
+      };
+
+      let unlockedCount = 0;
+      let html = '';
+
+      items.forEach(it => {
+        const isUnlocked = it.unlockCheck(stats, unlockedAchSet);
+        if (isUnlocked) unlockedCount++;
+
+        let isEquipped = false;
+        if (it.type === 'bowtie' && wardrobeEquipped.bowtie === it.equipKey && isUnlocked) isEquipped = true;
+        if (it.type === 'crown' && wardrobeEquipped.crown && isUnlocked) isEquipped = true;
+
+        let statusText = '未解锁';
+        if (isUnlocked) {
+          if (it.type === 'consumable') statusText = '点击查看/使用';
+          else statusText = isEquipped ? '已穿戴 ✓ (点击卸下)' : '未穿戴 (点击穿上)';
+        }
+
+        html += `
+          <div class="wardrobe-item-card ${isUnlocked ? '' : 'locked'} ${isEquipped ? 'equipped' : ''}" onclick="toggleEquip('${it.id}')">
+            <div class="wardrobe-item-top">
+              <span class="wardrobe-item-icon">${it.icon}</span>
+              <span class="wardrobe-item-name">${it.name}</span>
+            </div>
+            <div class="wardrobe-item-desc">${it.desc}</div>
+            <div class="wardrobe-item-status ${isEquipped ? 'on' : ''}">${statusText}</div>
+          </div>
+        `;
+      });
+
+      listEl.innerHTML = html;
+      if (badgeEl) badgeEl.innerText = `${unlockedCount} / ${items.length}`;
     }
 
     function renderAchievementsUI() {
@@ -1758,7 +1923,10 @@ dialog.addEventListener('click', () => {
         }
       }
       updateFlavorText();
+      achievementsList = getAchDefs();
       checkAchievements();
+      sanitizeWardrobe();
+      renderWardrobeUI();
     }
     updateStatsUI(false, false, false, false);
 
@@ -1937,7 +2105,7 @@ dialog.addEventListener('click', () => {
       if (e.key === ' ' || e.key === 'Enter') interact();
       if (e.key === 'm' || e.key === 'M') catMeow();
       if (e.key === 'f' || e.key === 'F' || e.key === 'x' || e.key === 'X') scratchAction();
-      if (e.key === 't' || e.key === 'T') {
+      if (e.key === 't' || e.key === 'T' || e.key === 'i' || e.key === 'I') {
         if (statsModal && statsModal.classList.contains('active')) closeStatsModal();
         else openStatsModal();
       }
