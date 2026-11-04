@@ -2797,7 +2797,7 @@
     // 各季贴图的缩放：冬天的树原画偏高大，压回与其它季相近的体量，底边与右边缘对齐
     const TREE_SCALE = { winter: 0.80 };
     // 各季贴图的垂直微调（画布像素，正数向下）
-    const TREE_DY = { winter: 4 };
+    const TREE_DY = { winter: 6 };
     let treeImgCache = { key: null, cv: null };
     function getSeasonTree(season, nightF) {
       const k = Math.round(Math.min(1, Math.max(0, nightF)) * 20) / 20;
