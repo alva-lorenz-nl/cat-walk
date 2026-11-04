@@ -1491,6 +1491,7 @@
     let timeLimitWarnAt = 0;       // 警告弹出的时刻
     let timeLimitWarnDwell = 4200; // 警告对话的停留时长
     let timeLimitLocked = false;   // 强制归零动画期间锁住操作
+    let pressLockUntil = 0;        // 连拨锁：警告 / 归零期间不接受新的拨动
     try {
       const v = parseFloat(localStorage.getItem('cat_time_offset') || '0');
       if (!isNaN(v)) { timeOffsetHours = v; timeTargetHours = v; }
@@ -1658,6 +1659,8 @@
 
     function applyTimeStep(step) {
       if (!step || timeLimitLocked) return;
+      // 警告还没说完时，爪子按下去也不算数，免得把话盖掉
+      if (performance.now() < pressLockUntil) return;
       const dir = step > 0 ? 1 : -1;
       const wanted = timeTargetHours + step;
       const clamped = Math.max(-TIME_LIMIT_HOURS, Math.min(TIME_LIMIT_HOURS, wanted));
@@ -1692,6 +1695,7 @@
         const days = absStep / 24;
         const delay = (timeAnim ? timeAnim.dur : 0) + 260;
         setTimeout(() => {
+          if (timeLimitWarned) return; // 已经顶到极限了，别拿报数盖住阿尔瓦的话
           const realH = new Date().getHours() + new Date().getMinutes() / 60;
           const hh = mod24(realH + timeOffsetHours);
           showDialog(`（小猫眨了下眼，运河畔的日光就这样被${dirWord}了 ${days} 天……现在${getDayPhaseName(hh)}，${hourToClock(hh)}。）`, { dwell: 3400 });
@@ -1711,6 +1715,9 @@
         return;
       }
 
+      // 顶到极限就立刻收手：停掉连拨，并锁住一小段时间，让小猫把话听完
+      stopPress();
+      pressLockUntil = now + 4200 + 1400;
       timeLimitWarned = true;
       timeLimitWarnDir = dir;
       timeLimitWarnAt = now;
@@ -1733,6 +1740,7 @@
       startTimeAnim();
       refreshTimeUI();
       showDialog("（阿尔瓦伸手把时针按回了原点，运河的水声重新落回此刻：『我说过的，小猫。时间不是玩具。』）", { dwell: 4400 });
+      pressLockUntil = performance.now() + (timeAnim ? timeAnim.dur : 0) + 4400;
       setTimeout(() => { timeLimitLocked = false; refreshTimeUI(); }, (timeAnim ? timeAnim.dur : 0) + 800);
     }
 
