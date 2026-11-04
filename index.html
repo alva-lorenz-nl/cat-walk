@@ -695,6 +695,20 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
+    .time-badge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      padding: 2px 7px;
+      border-radius: 8px;
+      background: rgba(12, 10, 18, 0.5);
+      color: #f3e6cf;
+      font-size: 10px;
+      letter-spacing: 0.5px;
+      font-family: -apple-system, monospace;
+      pointer-events: none;
+      z-index: 5;
+    }
     .dialog-box {
       position: absolute;
       top: 14px;
@@ -921,6 +935,7 @@
   <div class="game-wrapper" id="gameWrapper">
     <div class="canvas-container">
       <canvas id="gameCanvas" width="320" height="180"></canvas>
+      <div class="time-badge" id="timeBadge">🌆 黄昏</div>
     </div>
     <div class="dialog-box" id="dialog" title="点击可切换上方/下方"></div>
   </div>
@@ -1345,39 +1360,192 @@
       ctx.fillRect(Math.round(x), Math.round(y), w, h);
     }
 
+    // ===== 真实时间驱动的天色系统 =====
+    // 关键帧之间按当前时刻线性插值，天色随现实时间连续变亮变暗
+    const SKY_KEYFRAMES = [
+      { h: 0,    sky: ['#080d1e','#0e1428','#141b33','#1a213d','#202847'], far: '#0a0e1a', mid: '#0c111f', water: '#080f16', waveA: '#122029', waveB: '#1a2c3a', ground: '#16161c', line: '#0b0b0f', slab: '#121217', hi: '#2a2a33', night: 1 },
+      { h: 3.5,  sky: ['#080d1e','#0e1428','#141b33','#1a213d','#202847'], far: '#0a0e1a', mid: '#0c111f', water: '#080f16', waveA: '#122029', waveB: '#1a2c3a', ground: '#16161c', line: '#0b0b0f', slab: '#121217', hi: '#2a2a33', night: 1 },
+      { h: 5,    sky: ['#1b2340','#2b3355','#463f5c','#6b5464','#94706a'], far: '#191a28', mid: '#1d1e2d', water: '#101a22', waveA: '#1c2b36', waveB: '#2a3f4d', ground: '#24242a', line: '#121216', slab: '#1b1b21', hi: '#3a3a44', night: 0.45 },
+      { h: 6.5,  sky: ['#2f3a5e','#4e5a80','#8a7d92','#d39a7e','#f0bd8a'], far: '#241f2c', mid: '#2a2331', water: '#152029', waveA: '#24333e', waveB: '#3a4d5a', ground: '#2e2c32', line: '#17161a', slab: '#232227', hi: '#4a4852', night: 0.12 },
+      { h: 9,    sky: ['#5d86b8','#7ba3cc','#9dbcdd','#bcd3e8','#d6e4ef'], far: '#3a4a5e', mid: '#43556a', water: '#1d3542', waveA: '#2c5163', waveB: '#427a90', ground: '#454349', line: '#232227', slab: '#3a383e', hi: '#66646e', night: 0 },
+      { h: 13,   sky: ['#4f8fd0','#6ba6dd','#8ec0e8','#b3d6ef','#d3e8f6'], far: '#41566b', mid: '#4b6176', water: '#1f3d4c', waveA: '#2f5b70', waveB: '#4a8ba4', ground: '#4b4950', line: '#26252a', slab: '#403e45', hi: '#6e6c77', night: 0 },
+      { h: 16.5, sky: ['#5f7fa8','#7f97b5','#a8a8b4','#c9b49f','#e0c39a'], far: '#3a4152', mid: '#414a5c', water: '#1b2e3a', waveA: '#2a4552', waveB: '#3f6675', ground: '#43414a', line: '#222127', slab: '#38363e', hi: '#5f5d68', night: 0.03 },
+      { h: 18,   sky: ['#2b334a','#424559','#6d5854','#946851','#ba8358'], far: '#221e28', mid: '#26202c', water: '#18242b', waveA: '#2c434f', waveB: '#3b5866', ground: '#38363c', line: '#1c1b1f', slab: '#27262b', hi: '#4e4c54', night: 0.15 },
+      { h: 19.5, sky: ['#1a1f38','#2a2c4a','#453a54','#5f4557','#7a565a'], far: '#16141f', mid: '#191724', water: '#101b23', waveA: '#1d2e39', waveB: '#2a4350', ground: '#26252b', line: '#131216', slab: '#1d1c22', hi: '#3a3944', night: 0.6 },
+      { h: 21,   sky: ['#0d1327','#131a33','#1a2140','#21294a','#283155'], far: '#0b0f1a', mid: '#0e1220', water: '#0a141c', waveA: '#152430', waveB: '#1e3341', ground: '#1b1b22', line: '#0d0d11', slab: '#16161c', hi: '#2e2e38', night: 0.9 },
+      { h: 24,   sky: ['#080d1e','#0e1428','#141b33','#1a213d','#202847'], far: '#0a0e1a', mid: '#0c111f', water: '#080f16', waveA: '#122029', waveB: '#1a2c3a', ground: '#16161c', line: '#0b0b0f', slab: '#121217', hi: '#2a2a33', night: 1 }
+    ];
+
+    function hexToRgb(hex) {
+      const n = parseInt(hex.slice(1), 16);
+      return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    }
+    function mixColor(a, b, t) {
+      const A = hexToRgb(a), B = hexToRgb(b);
+      const r = Math.round(A[0] + (B[0] - A[0]) * t);
+      const g = Math.round(A[1] + (B[1] - A[1]) * t);
+      const bl = Math.round(A[2] + (B[2] - A[2]) * t);
+      return `rgb(${r},${g},${bl})`;
+    }
+
+    // 星星与窗灯只生成一次，避免每帧乱跳
+    const stars = [];
+    for (let i = 0; i < 70; i++) {
+      stars.push({ x: Math.floor(Math.random() * 320), y: Math.floor(Math.random() * 78), ph: Math.random() * 6.28, s: Math.random() > 0.8 ? 2 : 1 });
+    }
+    const windowLights = [];
+    for (let i = 0; i < 26; i++) {
+      windowLights.push({ x: 12 + Math.floor(Math.random() * 300), y: 62 + Math.floor(Math.random() * 50), ph: Math.random() * 6.28 });
+    }
+
+    function getDayPhaseName(hh) {
+      if (hh >= 5 && hh < 7) return '黎明';
+      if (hh >= 7 && hh < 11) return '上午';
+      if (hh >= 11 && hh < 15) return '正午';
+      if (hh >= 15 && hh < 17.5) return '午后';
+      if (hh >= 17.5 && hh < 19.5) return '黄昏';
+      if (hh >= 19.5 && hh < 22) return '夜晚';
+      return '深夜';
+    }
+    function getDayPhaseIcon(hh) {
+      if (hh >= 5 && hh < 7) return '🌅';
+      if (hh >= 7 && hh < 17.5) return '☀️';
+      if (hh >= 17.5 && hh < 19.5) return '🌆';
+      return '🌙';
+    }
+
+    let lastBadgeMinute = -1;
+    function computePalette() {
+      const now = new Date();
+      const hh = now.getHours() + now.getMinutes() / 60;
+      let a = SKY_KEYFRAMES[0], b = SKY_KEYFRAMES[1];
+      for (let i = 0; i < SKY_KEYFRAMES.length - 1; i++) {
+        if (hh >= SKY_KEYFRAMES[i].h && hh <= SKY_KEYFRAMES[i + 1].h) {
+          a = SKY_KEYFRAMES[i];
+          b = SKY_KEYFRAMES[i + 1];
+          break;
+        }
+      }
+      const span = (b.h - a.h) || 1;
+      const t = Math.min(1, Math.max(0, (hh - a.h) / span));
+      const pal = { hour: hh, night: a.night + (b.night - a.night) * t, sky: [] };
+      for (let i = 0; i < 5; i++) pal.sky.push(mixColor(a.sky[i], b.sky[i], t));
+      ['far', 'mid', 'water', 'waveA', 'waveB', 'ground', 'line', 'slab', 'hi'].forEach(k => {
+        pal[k] = mixColor(a[k], b[k], t);
+      });
+
+      const minuteNow = now.getHours() * 60 + now.getMinutes();
+      if (minuteNow !== lastBadgeMinute) {
+        lastBadgeMinute = minuteNow;
+        const badge = document.getElementById('timeBadge');
+        if (badge) {
+          const hhStr = String(now.getHours()).padStart(2, '0');
+          const mmStr = String(now.getMinutes()).padStart(2, '0');
+          badge.innerText = `${getDayPhaseIcon(hh)} ${getDayPhaseName(hh)} ${hhStr}:${mmStr}`;
+        }
+      }
+      return pal;
+    }
+
+    function drawCelestialBody(hh) {
+      const isSun = (hh >= 6 && hh < 19);
+      let p;
+      if (isSun) {
+        p = (hh - 6) / 13;
+      } else {
+        p = (hh >= 19) ? (hh - 19) / 11 : (hh + 5) / 11;
+      }
+      const cx = Math.round(22 + p * 276);
+      const cy = Math.round(126 - Math.sin(p * Math.PI) * 92);
+      if (isSun) {
+        ctx.fillStyle = (hh < 8 || hh > 17) ? 'rgba(255,190,120,0.20)' : 'rgba(255,235,170,0.16)';
+        ctx.fillRect(cx - 9, cy - 9, 18, 18);
+        px(cx - 4, cy - 5, 9, 11, '#ffe9a8');
+        px(cx - 5, cy - 4, 11, 9, '#ffe9a8');
+        px(cx - 3, cy - 3, 7, 7, '#fff7d6');
+        px(cx - 1, cy - 1, 3, 3, '#ffffff');
+      } else {
+        ctx.fillStyle = 'rgba(200,220,255,0.09)';
+        ctx.fillRect(cx - 8, cy - 8, 16, 16);
+        px(cx - 4, cy - 5, 9, 11, '#e8eeff');
+        px(cx - 5, cy - 4, 11, 9, '#e8eeff');
+        px(cx - 3, cy - 3, 7, 7, '#f7f9ff');
+        px(cx - 2, cy - 2, 2, 2, '#cdd6ea');
+        px(cx + 1, cy + 1, 2, 1, '#cdd6ea');
+        px(cx, cy - 3, 1, 1, '#d9e0f0');
+      }
+    }
+
     function drawScene() {
-      // 1. 秋日黄昏渐变天空
-      px(0, 0, 320, 25, '#2b334a');
-      px(0, 25, 320, 30, '#424559');
-      px(0, 55, 320, 35, '#6d5854');
-      px(0, 90, 320, 30, '#946851');
-      px(0, 120, 320, 20, '#ba8358');
+      const pal = computePalette();
+      const nightF = Math.min(1, Math.max(0, pal.night));
+
+      // 1. 随时间流动的渐变天空
+      px(0, 0, 320, 25, pal.sky[0]);
+      px(0, 25, 320, 30, pal.sky[1]);
+      px(0, 55, 320, 35, pal.sky[2]);
+      px(0, 90, 320, 30, pal.sky[3]);
+      px(0, 120, 320, 20, pal.sky[4]);
+
+      // 星星：只在夜色里浮现，轻轻呼吸
+      if (nightF > 0.25) {
+        const ts = Date.now() * 0.002;
+        stars.forEach(st => {
+          const tw = 0.55 + 0.45 * Math.sin(ts * 1.7 + st.ph);
+          ctx.globalAlpha = Math.min(1, (nightF - 0.25) / 0.75) * tw;
+          px(st.x, st.y, st.s, st.s, '#fdf6e3');
+        });
+        ctx.globalAlpha = 1;
+      }
+
+      // 太阳 / 月亮沿弧线走过天空
+      drawCelestialBody(pal.hour);
 
       // 远景莱顿尖顶与老楼剪影
-      px(20, 75, 25, 45, '#221e28');
-      px(28, 60, 9, 15, '#221e28');
-      px(32, 50, 1, 10, '#221e28');
+      px(20, 75, 25, 45, pal.far);
+      px(28, 60, 9, 15, pal.far);
+      px(32, 50, 1, 10, pal.far);
 
-      px(70, 82, 35, 38, '#26202c');
-      px(140, 70, 30, 50, '#221e28');
-      px(150, 55, 10, 15, '#221e28');
+      px(70, 82, 35, 38, pal.mid);
+      px(140, 70, 30, 50, pal.far);
+      px(150, 55, 10, 15, pal.far);
+
+      // 入夜后，老楼窗子逐盏亮起暖黄的灯
+      if (nightF > 0.3) {
+        const t2 = Date.now() * 0.0012;
+        windowLights.forEach(w => {
+          const flick = 0.75 + 0.25 * Math.sin(t2 + w.ph);
+          ctx.globalAlpha = Math.min(1, (nightF - 0.3) / 0.6) * flick;
+          px(w.x, w.y, 2, 2, '#ffd27a');
+        });
+        ctx.globalAlpha = 1;
+      }
 
       // 运河水面
-      px(0, 138, 320, 42, '#18242b');
+      px(0, 138, 320, 42, pal.water);
       const t = Date.now() * 0.002;
       for (let y = 142; y < 180; y += 4) {
         let waveX = (Math.sin(t + y) * 20 + 160) % 320;
-        px(waveX, y, 22, 1, '#2c434f');
-        px((waveX + 110) % 320, y + 2, 16, 1, '#3b5866');
+        px(waveX, y, 22, 1, pal.waveA);
+        px((waveX + 110) % 320, y + 2, 16, 1, pal.waveB);
+      }
+      // 夜里的水面晃着几缕暖色灯光倒影
+      if (nightF > 0.35) {
+        ctx.globalAlpha = Math.min(1, (nightF - 0.35) / 0.65) * 0.5;
+        for (let y = 146; y < 178; y += 6) {
+          const rx = (Math.sin(t * 0.8 + y * 0.7) * 26 + 160) % 320;
+          px(rx, y, 10, 1, '#ffcf7a');
+        }
+        ctx.globalAlpha = 1;
       }
 
       // 岸边石阶地面
-      px(0, 118, 320, 22, '#38363c');
-      px(0, 139, 320, 2, '#1c1b1f');
+      px(0, 118, 320, 22, pal.ground);
+      px(0, 139, 320, 2, pal.line);
       for (let s = 0; s < 320; s += 16) {
-        px(s, 119, 1, 20, '#27262b');
-        px(s + 2, 120, 6, 1, '#4e4c54');
-        px(s + 8, 128, 5, 1, '#47454d');
+        px(s, 119, 1, 20, pal.slab);
+        px(s + 2, 120, 6, 1, pal.hi);
+        px(s + 8, 128, 5, 1, pal.hi);
       }
 
       // 飘落秋叶
