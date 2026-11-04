@@ -1485,6 +1485,7 @@
     let timeSkipMaxHours = 0;     // 单次跳过的最大值
     let timeBackTotalHours = 0;   // 累计往回拨的小时数
     let timeBackMinOffset = 0;    // 曾拨到过的最早偏移（负数）
+    let timeMaxOffsetHours = 0;   // 曾拨到过的最晚偏移（正数）
     const TIME_LIMIT_HOURS = 23976; // 手动调节的极限：正负各 999 天
     let timeLimitWarned = false;   // 是否已经警告过（等待小猫收手）
     let timeLimitWarnDir = 0;      // 警告时被推的方向
@@ -1504,6 +1505,9 @@
       const bm = parseFloat(localStorage.getItem('cat_time_back_min') || '0');
       if (!isNaN(bm)) timeBackMinOffset = bm;
       if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+      const mx = parseFloat(localStorage.getItem('cat_time_max_offset') || '0');
+      if (!isNaN(mx)) timeMaxOffsetHours = Math.max(timeMaxOffsetHours, mx);
+      if (timeTargetHours > timeMaxOffsetHours) timeMaxOffsetHours = timeTargetHours;
       if (timeTargetHours > TIME_LIMIT_HOURS) { timeTargetHours = TIME_LIMIT_HOURS; timeOffsetHours = TIME_LIMIT_HOURS; }
       if (timeTargetHours < -TIME_LIMIT_HOURS) { timeTargetHours = -TIME_LIMIT_HOURS; timeOffsetHours = -TIME_LIMIT_HOURS; }
     } catch (e) {}
@@ -1607,6 +1611,7 @@
         localStorage.setItem('cat_time_skip_max', String(timeSkipMaxHours));
         localStorage.setItem('cat_time_back_total', String(timeBackTotalHours));
         localStorage.setItem('cat_time_back_min', String(timeBackMinOffset));
+        localStorage.setItem('cat_time_max_offset', String(timeMaxOffsetHours));
       } catch (e) {}
     }
 
@@ -1673,6 +1678,8 @@
         if (dir < 0) {
           timeBackTotalHours += absStep;
           if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+        } else if (timeTargetHours > timeMaxOffsetHours) {
+          timeMaxOffsetHours = timeTargetHours;
         }
         if (timeLimitWarned && dir !== timeLimitWarnDir) {
           timeLimitWarned = false;
@@ -3045,6 +3052,26 @@ dialog.addEventListener('click', () => {
         reward: '称号：时间的逆行者',
         check: () => timeBackMinOffset <= -8760,
         progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 365)}/365天`
+      },
+      {
+        id: 'time_limit_future',
+        icon: '🌇',
+        hidden: true,
+        name: '走到时间的尽头',
+        desc: '把运河畔的时针一路拨到最远处，999 天以后的风里，已经闻不到今年的桂花味了',
+        reward: '称号：站在尽头的人',
+        check: () => timeMaxOffsetHours >= TIME_LIMIT_HOURS,
+        progress: () => `${Math.min(Math.floor(timeMaxOffsetHours / 24), 999)}/999天`
+      },
+      {
+        id: 'time_limit_past',
+        icon: '🌌',
+        hidden: true,
+        name: '退回时间的源头',
+        desc: '把时针一路往回拨到最远处，999 天以前的运河，堤岸还是刚砌好的样子',
+        reward: '称号：见过运河年轻的人',
+        check: () => timeBackMinOffset <= -TIME_LIMIT_HOURS,
+        progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 999)}/999天`
       }
     ];
 
