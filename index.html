@@ -1000,15 +1000,14 @@
 
   <div class="time-controls">
     <span>🕰</span>
-    <button class="btn-time" data-step="-168">⏪ 7天</button>
-    <button class="btn-time" data-step="-24">⏪ 1天</button>
+    <button class="btn-time" data-step="-168" data-ach="time_jump_30d" style="display:none">⏪ 7天</button>
+    <button class="btn-time" data-step="-24" data-ach="time_jump_1d" style="display:none">⏪ 1天</button>
     <button class="btn-time" data-step="-1">⏪ 1时</button>
     <span class="time-now" id="timeNow">跟随现实</span>
     <button class="btn-time" data-step="1">1时 ⏩</button>
-    <button class="btn-time" data-step="24">1天 ⏩</button>
-    <button class="btn-time" data-step="168">7天 ⏩</button>
+    <button class="btn-time" data-step="24" data-ach="time_jump_1d" style="display:none">1天 ⏩</button>
+    <button class="btn-time" data-step="168" data-ach="time_jump_30d" style="display:none">7天 ⏩</button>
     <button class="btn-follow active" id="btnFollowTime">回到现实</button>
-    <span class="time-hint">Shift 点击 ×10</span>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1478,12 +1477,14 @@
     }
 
     // 手动时间：以「相对现实时间的偏移小时数」记录，0 表示跟随现实
-    let timeOffsetHours = 0;
+    let timeOffsetHours = 0;      // 当前显示的偏移（动画中会逐帧变化）
+    let timeTargetHours = 0;      // 目标偏移
+    let timeAnim = null;          // { from, to, t0, dur }
     let timeSkipTotalHours = 0;   // 累计手动跳过的小时数
     let timeSkipMaxHours = 0;     // 单次跳过的最大值
     try {
       const v = parseFloat(localStorage.getItem('cat_time_offset') || '0');
-      if (!isNaN(v)) timeOffsetHours = v;
+      if (!isNaN(v)) { timeOffsetHours = v; timeTargetHours = v; }
       const t = parseFloat(localStorage.getItem('cat_time_skip_total') || '0');
       if (!isNaN(t)) timeSkipTotalHours = t;
       const m = parseFloat(localStorage.getItem('cat_time_skip_max') || '0');
@@ -1543,7 +1544,7 @@
         const badge = document.getElementById('timeBadge');
         if (badge) badge.innerText = badgeText;
         const timeNowEl = document.getElementById('timeNow');
-        if (timeNowEl) timeNowEl.innerText = timeOffsetHours === 0 ? '跟随现实' : formatOffset(timeOffsetHours);
+        if (timeNowEl) timeNowEl.innerText = timeOffsetHours === 0 ? '跟随现实' : formatOffset(Math.round(timeOffsetHours));
       }
       return pal;
     }
@@ -1577,59 +1578,98 @@
       }
     }
 
-    // ===== 手动调节时间控件（一键前进 / 后退） =====
+    // ===== 手动调节时间控件（一键前进 / 后退，带过渡动画） =====
     const timeNowEl = document.getElementById('timeNow');
     const btnFollowTimeEl = document.getElementById('btnFollowTime');
     const timeStepBtns = Array.from(document.querySelectorAll('.btn-time'));
 
     function saveTimeState() {
       try {
-        localStorage.setItem('cat_time_offset', String(timeOffsetHours));
+        localStorage.setItem('cat_time_offset', String(timeTargetHours));
         localStorage.setItem('cat_time_skip_total', String(timeSkipTotalHours));
         localStorage.setItem('cat_time_skip_max', String(timeSkipMaxHours));
       } catch (e) {}
     }
 
+    // 1天 / 7天 的按钮要等对应成就解锁后才露面
+    function updateTimeButtons() {
+      try {
+        if (typeof achievementsList === 'undefined') return;
+        document.querySelectorAll('.btn-time[data-ach]').forEach(btn => {
+          const achId = btn.dataset.ach;
+          const unlocked = unlockedAchSet.has(achId) ||
+            achievementsList.some(a => a.id === achId && a.check());
+          btn.style.display = unlocked ? '' : 'none';
+        });
+      } catch (e) {}
+    }
+
     function refreshTimeUI() {
-      if (timeNowEl) timeNowEl.innerText = formatOffset(timeOffsetHours);
-      if (btnFollowTimeEl) btnFollowTimeEl.classList.toggle('active', timeOffsetHours === 0);
+      if (timeNowEl) timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours));
+      if (btnFollowTimeEl) btnFollowTimeEl.classList.toggle('active', timeTargetHours === 0 && !timeAnim);
       lastBadgeText = '';
       lastBadgeMinute = -1;
+      updateTimeButtons();
+    }
+
+    function startTimeAnim() {
+      const from = timeOffsetHours;
+      const to = timeTargetHours;
+      if (Math.abs(to - from) < 0.01) { timeAnim = null; refreshTimeUI(); return; }
+      const dist = Math.abs(to - from);
+      const dur = Math.min(2400, 620 + Math.log2(1 + dist) * 320);
+      timeAnim = { from, to, t0: performance.now(), dur };
+    }
+
+    function updateTimeAnim() {
+      if (!timeAnim) return;
+      const p = Math.min(1, (performance.now() - timeAnim.t0) / timeAnim.dur);
+      const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      timeOffsetHours = timeAnim.from + (timeAnim.to - timeAnim.from) * e;
+      if (timeNowEl) timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours));
+      if (p >= 1) {
+        timeOffsetHours = timeAnim.to;
+        timeAnim = null;
+        refreshTimeUI();
+      }
     }
 
     function applyTimeStep(step) {
       if (!step) return;
-      timeOffsetHours += step;
       const absStep = Math.abs(step);
       timeSkipTotalHours += absStep;
       if (absStep > timeSkipMaxHours) timeSkipMaxHours = absStep;
+      timeTargetHours += step;
       saveTimeState();
+      startTimeAnim();
       refreshTimeUI();
-      const pal = computePalette();
-      drawScene();
+      checkAchievements();
+
       if (absStep >= 24) {
         const dirWord = step > 0 ? '快进' : '倒回';
         const days = absStep / 24;
-        showDialog(`（小猫眨了下眼，运河畔的日光就这样被${dirWord}了 ${days} 天……现在${getDayPhaseName(mod24(new Date().getHours() + new Date().getMinutes() / 60 + timeOffsetHours))}，${hourToClock(mod24(new Date().getHours() + new Date().getMinutes() / 60 + timeOffsetHours))}。）`, { dwell: 3200 });
+        const delay = (timeAnim ? timeAnim.dur : 0) + 260;
+        setTimeout(() => {
+          const realH = new Date().getHours() + new Date().getMinutes() / 60;
+          const hh = mod24(realH + timeOffsetHours);
+          showDialog(`（小猫眨了下眼，运河畔的日光就这样被${dirWord}了 ${days} 天……现在${getDayPhaseName(hh)}，${hourToClock(hh)}。）`, { dwell: 3400 });
+        }, delay);
       }
-      checkAchievements();
     }
 
     timeStepBtns.forEach(btn => {
-      btn.addEventListener('click', (ev) => {
-        const base = parseFloat(btn.dataset.step);
-        if (isNaN(base)) return;
-        // 按住 Shift 再点，一次走十步（7天 × 10 = 70天）
-        applyTimeStep(ev.shiftKey ? base * 10 : base);
+      btn.addEventListener('click', () => {
+        const step = parseFloat(btn.dataset.step);
+        if (!isNaN(step)) applyTimeStep(step);
       });
     });
 
     if (btnFollowTimeEl) {
       btnFollowTimeEl.addEventListener('click', () => {
-        timeOffsetHours = 0;
+        timeTargetHours = 0;
         saveTimeState();
+        startTimeAnim();
         refreshTimeUI();
-        drawScene();
       });
     }
 
@@ -2757,24 +2797,24 @@ dialog.addEventListener('click', () => {
         progress: () => `${nightWalkFlag ? 1 : 0}/1`
       },
       {
-        id: 'time_jump_3d',
+        id: 'time_jump_1d',
         icon: '⏳',
         hidden: true,
         name: '光阴似箭',
-        desc: '一次性把运河畔的时间往前拨过三天以上',
-        reward: '称号：拨动日晷的爪子',
-        check: () => timeSkipMaxHours >= 72,
-        progress: () => `${Math.min(Math.floor(timeSkipMaxHours / 24), 3)}/3天`
+        desc: '一点一点地，手动把运河畔的时间拨过了整整一天',
+        reward: '解锁：⏩ 一键跳过 1 天',
+        check: () => timeSkipTotalHours >= 24,
+        progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 1)}/1天`
       },
       {
         id: 'time_jump_30d',
         icon: '🌗',
         hidden: true,
         name: '白驹过隙',
-        desc: '一次性跳过整整一个月的光阴',
-        reward: '称号：一步跨月的猫',
-        check: () => timeSkipMaxHours >= 720,
-        progress: () => `${Math.min(Math.floor(timeSkipMaxHours / 24), 30)}/30天`
+        desc: '累计拨过三十天，整整一个月的日升月落',
+        reward: '解锁：⏩ 一键跳过 7 天',
+        check: () => timeSkipTotalHours >= 720,
+        progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 30)}/30天`
       },
       {
         id: 'time_jump_total_100d',
@@ -2866,6 +2906,7 @@ dialog.addEventListener('click', () => {
       if (badge) {
         badge.innerText = `${completedCount} / ${achievementsList.length}`;
       }
+      updateTimeButtons();
     }
 
     function updateStatsUI(bumpMeow, bumpKO, bumpBoss, bumpDiamond) {
@@ -3434,6 +3475,7 @@ dialog.addEventListener('click', () => {
         bench.healTimer = 0;
       }
 
+      updateTimeAnim();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawScene();
       drawPixelCat(cat.x, cat.y, cat.facing, isMoving, cat.walkTimer, cat.idleTimer);
