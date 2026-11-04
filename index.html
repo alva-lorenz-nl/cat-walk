@@ -1643,6 +1643,118 @@
     ];
     let diamondScratchIndex = 0;
 
+    // ── 赫尔曼的「挨挠记忆」：终身累计被挠次数越多，他说话就越不一样 ──
+    let hermanHitTotal = 0;
+    try { hermanHitTotal = parseInt(localStorage.getItem('cat_herman_hit_total') || '0', 10) || 0; } catch (e) {}
+    let hermanStageSeen = 0;
+    try { hermanStageSeen = parseInt(localStorage.getItem('cat_herman_stage_seen') || '0', 10) || 0; } catch (e) {}
+
+    const HERMAN_STAGES = [0, 20, 60, 150, 300];
+    function hermanStage() {
+      let s = 0;
+      for (let i = 0; i < HERMAN_STAGES.length; i++) if (hermanHitTotal >= HERMAN_STAGES[i]) s = i;
+      return s;
+    }
+
+    // 各阶段的长椅闲话（挠得越多，他一见小猫就先护住衣服）
+    const hermanIdleByStage = {
+      1: [
+        "赫尔曼下意识按住马甲上的扣子，又假装只是在理衣襟：『……站那么近做什么，我今天的扣子是新缝的。』",
+        "赫尔曼把图纸往怀里收了收，语气警惕：『小猫，我们讲个道理——手稿和你的爪尖，天生相克。』",
+        "赫尔曼斜眼瞥着你的爪子，忽然从口袋摸出华夫饼：『拿着。吃完了就乖一点，听见没有？』",
+        "赫尔曼摸了摸袖口，那里还留着三道白痕：『这件的布料我特意换厚了。别问我为什么，问就是纺织业进步。』"
+      ],
+      2: [
+        "赫尔曼把深红马甲裹紧了些，往后挪了半个身位：『来了来了，那个挠扣子专家来了。阿尔瓦，你管管。』",
+        "赫尔曼从包里抽出一条旧围巾垫在腿上：『……坐吧。这条是准备给你磨爪子的，别动新的。』",
+        "赫尔曼叹气：『上个月换了四件马甲，裁缝看我的眼神已经不像看学者了。』",
+        "赫尔曼把手稿举过头顶，熟练得让人心疼：『图纸不行。你挠我，行了吧？』",
+        "赫尔曼压低声：『我最近在写一篇关于你的论文。样本量：一件马甲。结论：猫赢了。』"
+      ],
+      3: [
+        "赫尔曼今天穿了一件洗得发白的旧外套，看到你来，平静地把袖子伸过来：『喏。挠完记得让我把这一节讲完。』",
+        "赫尔曼把猫抓板从长椅底下抽出来摆好，动作娴熟：『放这儿了。旧的用秃了，我买了新的。』",
+        "赫尔曼望着运河，语气出奇地平静：『上周裁缝给我打电话，问我是不是养了只老虎。我说，比老虎麻烦。』",
+        "赫尔曼忽然笑了一下：『奇怪。你不挠我的时候，我反而觉得这长椅有点空。』",
+        "赫尔曼推了推眼镜：『阿尔瓦说我把这叫做巴甫洛夫效应。我说这叫认命。』"
+      ],
+      4: [
+        "赫尔曼见你走近，索性把外套脱下来挂在椅背上：『来。快点，我一会儿还要去上课。』",
+        "赫尔曼低头整理袖口，语气懒散：『今天不挠？那我自己把扣子拆一颗给你玩。』",
+        "赫尔曼把手稿摊在膝上，笔尖顿了顿：『其实这些年，被挠坏的东西我一件都没扔。都在阁楼上。』",
+        "赫尔曼侧过脸：『喂。要是哪天你不想挠了，也还是来坐坐。这椅子认得你。』",
+        "赫尔曼轻轻哼了一声：『阿尔瓦说我是被驯服了。我告诉他，我只是学会了不跟猫讲道理。』"
+      ]
+    };
+
+    // 各阶段的被挠台词
+    const hermanScratchByStage = {
+      1: [
+        "【又是这一爪！】赫尔曼熟练地护住扣子：『看见没有？我早有防备！……嗷，袖子，袖子不行！』",
+        "【连环猫猫拳！】赫尔曼边躲边摸出华夫饼当盾牌：『华夫饼换扣子！这买卖你不亏！』",
+        "【精准下爪！】赫尔曼低头看了看新缝的扣子，又看看你：『你到底是猫还是裁缝的托？』",
+        "赫尔曼捂着手稿后退：『我可以被挠，论文不行——这是我仅剩的尊严。』"
+      ],
+      2: [
+        "【熟练的一爪！】赫尔曼认命地叹了口气，把歪掉的领巾正回来：『第几次了？我都不数了。』",
+        "【软肉垫连环拍！】赫尔曼一边挨挠一边看表：『快点，我三点还有课。……好，现在我有空了。』",
+        "【偷袭后颈！】赫尔曼一动不动：『这回我连反应都省了。省点力气晚上改作业。』",
+        "赫尔曼从包里摸出第五件备用马甲：『别吃惊。我现在的行李比实验器材还重。』"
+      ],
+      3: [
+        "【一爪落下！】赫尔曼连眼睛都没抬：『嗯。这次挠得比上次整齐。』",
+        "【猫爪勾勾！】赫尔曼任由袖口被扯，顺手替你把爪子上的线头摘掉：『别吃这个。』",
+        "【暴击！】赫尔曼看着外套上的新洞，点点头：『正好，这件我早想换了。』",
+        "【猫猫拳！】赫尔曼抬了抬胳膊配合你：『左袖。左边也来一下，对称点。』"
+      ],
+      4: [
+        "【轻轻一爪！】赫尔曼一动不动地坐着，甚至微微侧身让你够得更顺手：『嗯。继续。』",
+        "【猫爪落下！】赫尔曼从口袋摸出一块华夫饼递过来：『挠累了就吃。别客气。』",
+        "【暴击！】赫尔曼看了看衣服上的洞，笑了一声：『这件我留着。明年课题组的墙上挂着。』",
+        "【最后一爪！】赫尔曼把手稿合上，安静地说：『挠完了？那陪我坐一会儿吧。』"
+      ]
+    };
+
+    // 里程碑台词：跨过门槛时的那一爪，他会有不一样的反应
+    const hermanMilestoneLines = {
+      20: "赫尔曼盯着马甲上刚被挠开的线头，沉默了三秒，然后从口袋里掏出针线包：『……行。我开始随身带这个了。』",
+      60: "赫尔曼把被挠坏的外套叠好放进包里，又拿出一件一模一样的：『你以为我为什么买六件。』",
+      150: "赫尔曼看着衣服上的洞，忽然很轻地说：『我好像已经不太记得，被你挠之前穿的是什么衣服了。』",
+      300: "赫尔曼安静了很久，才开口：『这么多年了。……小猫，你要是哪天不来了，我可能会有点不习惯。』"
+    };
+
+    function pickHermanIdleLine() {
+      const s = hermanStage();
+      if (s > 0 && hermanIdleByStage[s]) {
+        const pool = hermanIdleByStage[s];
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      return hermanDialogues[hermanDialogIndex++ % hermanDialogues.length];
+    }
+
+    function pickHermanScratchLine() {
+      const s = hermanStage();
+      if (s > 0 && hermanScratchByStage[s]) {
+        const pool = hermanScratchByStage[s];
+        return pool[Math.floor(Math.random() * pool.length)];
+      }
+      return scratchDialogues[scratchIndex++ % scratchDialogues.length];
+    }
+
+    // 记一次挨挠，返回跨阶段时的里程碑台词（没有则返回 null）
+    function recordHermanHit() {
+      hermanHitTotal++;
+      updateFlavorText();
+      try { localStorage.setItem('cat_herman_hit_total', hermanHitTotal); } catch (e) {}
+      const s = hermanStage();
+      if (s > hermanStageSeen) {
+        hermanStageSeen = s;
+        try { localStorage.setItem('cat_herman_stage_seen', hermanStageSeen); } catch (e) {}
+        return hermanMilestoneLines[HERMAN_STAGES[s]] || null;
+      }
+      return null;
+    }
+
     // 击倒台词池
     const koDialogues = [
       "他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』",
@@ -3063,6 +3175,12 @@ dialog.addEventListener('click', () => {
       } else {
         statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮课题组熬夜冠军终结者’称号非你莫属！继续投喂华夫饼，去挑战黄金甚至钻石大BOSS吧！”`;
       }
+      if (hermanHitTotal > 0) {
+        const stageNames = ['老样子', '开始提防你', '见你就护衣服', '已经认命了', '把你当自家人'];
+        const st = hermanStage();
+        const next = HERMAN_STAGES[st + 1];
+        statsFlavor.innerText += ` 赫尔曼累计被你挠了 ${hermanHitTotal} 爪，现在${stageNames[st]}` + (next ? `（再挠 ${next - hermanHitTotal} 爪，他大概又要换一种说法了）` : '') + '。';
+      }
     }
 
     // ===== 漫步手帐 · 成就系统 =====
@@ -3788,8 +3906,7 @@ dialog.addEventListener('click', () => {
         showDialog(alvaDialogues[alvaDialogIndex % alvaDialogues.length]);
         alvaDialogIndex++;
       } else if (distHerman < 45) {
-        showDialog(hermanDialogues[hermanDialogIndex % hermanDialogues.length]);
-        hermanDialogIndex++;
+        showDialog(pickHermanIdleLine());
       } else {
         catMeow();
       }
@@ -3880,6 +3997,7 @@ dialog.addEventListener('click', () => {
             flyingWaffle.rot = 0;
           }, 1500);
         } else {
+          const milestoneLine = recordHermanHit();
           if (bench.bossType === 'diamond') {
             const diaText = diamondScratchDialogues[diamondScratchIndex % diamondScratchDialogues.length];
             showDialog(`【暴击！-${damage} HP】` + diaText);
@@ -3889,9 +4007,8 @@ dialog.addEventListener('click', () => {
             showDialog(`【暴击！-${damage} HP】` + bossText);
             bossScratchIndex++;
           } else {
-            const baseText = scratchDialogues[scratchIndex % scratchDialogues.length];
-            showDialog(`【暴击！-${damage} HP】` + baseText);
-            scratchIndex++;
+            const baseText = pickHermanScratchLine();
+            showDialog(`【暴击！-${damage} HP】` + (milestoneLine || baseText), { dwell: milestoneLine ? 8000 : undefined });
           }
         }
       } else {
