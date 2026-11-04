@@ -1016,6 +1016,120 @@
       color: #635b54;
       pointer-events: none;
     }
+
+    /* ===== 📤 分享图面板 ===== */
+    .stats-modal-btn-row { display: flex; gap: 10px; align-items: stretch; }
+    .stats-share-top {
+      display: block;
+      width: 100%;
+      margin: 0 0 12px;
+    }
+    .stats-modal-btn-row .stats-modal-btn-close { flex: 1; width: auto; margin: 0; }
+    .stats-modal-btn-share {
+      flex: 1;
+      padding: 11px 12px;
+      background: linear-gradient(180deg, #6b4d2f, #4a3320);
+      border: 1.5px solid #b98f4e;
+      border-radius: 10px;
+      color: #f7e7c8;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: filter .15s;
+    }
+    .stats-modal-btn-share:hover { filter: brightness(1.15); }
+    .stats-modal-btn-share:active { transform: translateY(1px); }
+    .share-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 6, 4, 0.84);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      z-index: 1300;
+    }
+    .share-overlay.active { display: flex; }
+    .share-panel {
+      width: min(400px, 96vw);
+      max-height: 94vh;
+      overflow-y: auto;
+      background: #221a15;
+      border: 1.5px solid #6b5745;
+      border-radius: 16px;
+      padding: 14px 14px 18px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.65);
+    }
+    .share-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #eed6b1;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .share-close {
+      background: none;
+      border: none;
+      color: #a49e97;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .share-label {
+      display: block;
+      font-size: 11px;
+      color: #a49e97;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+      line-height: 1.5;
+    }
+    .share-input {
+      width: 100%;
+      padding: 9px 11px;
+      border-radius: 9px;
+      border: 1.5px solid #6b5745;
+      background: #191310;
+      color: #f6e9d6;
+      font-size: 14px;
+      outline: none;
+      user-select: text;
+      -webkit-user-select: text;
+    }
+    .share-input:focus { border-color: #c9a227; }
+    .share-preview {
+      margin: 12px 0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #191310;
+      display: flex;
+      justify-content: center;
+      border: 1px solid #3a2d24;
+    }
+    .share-preview canvas { width: 100%; height: auto; display: block; }
+    .share-actions { display: flex; gap: 9px; }
+    .share-actions button {
+      flex: 1;
+      padding: 10px 8px;
+      border-radius: 9px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1.5px solid #6b5745;
+      background: #2c211a;
+      color: #f0e0c8;
+      transition: filter .15s;
+    }
+    .share-actions button.primary {
+      background: linear-gradient(180deg, #7a5a33, #543c24);
+      border-color: #b98f4e;
+      color: #fdf0d5;
+      font-weight: 700;
+    }
+    .share-actions button:hover { filter: brightness(1.15); }
+    .share-tip { margin-top: 9px; font-size: 10.5px; color: #7d736a; line-height: 1.7; }
   </style>
 </head>
 <body>
@@ -1038,6 +1152,9 @@
         <button class="stats-modal-close" id="btnCloseStats" title="关闭">&times;</button>
       </div>
       <div class="stats-modal-body">
+        <!-- 📤 分享图：置于手帐最顶端，一进来就能看到 -->
+        <button class="stats-modal-btn-share stats-share-top" id="btnShareCard">📤 生成分享图</button>
+
         <!-- 顶部标签页切换 -->
         <div class="modal-tabs">
           <button class="modal-tab-btn active" id="tabBtnStats" onclick="switchModalTab('stats')">📊 战绩与成就</button>
@@ -1104,8 +1221,28 @@
         <div class="stats-flavor" id="statsFlavor">
           “长椅上的赫尔曼今天也在叹气呢……不过别担心，小鱼干和华夫饼我都给你备好了。”
         </div>
-        <button class="stats-modal-btn-close" id="btnConfirmClose">收起手帐</button>
+        <div class="stats-modal-btn-row">
+          <button class="stats-modal-btn-close" id="btnConfirmClose">收起手帐</button>
+        </div>
       </div>
+    </div>
+  </div>
+
+  <!-- 📤 分享图面板：把成就与战绩导出成一张图 -->
+  <div class="share-overlay" id="shareOverlay">
+    <div class="share-panel">
+      <div class="share-head">
+        <span>📤 漫步分享图</span>
+        <button class="share-close" id="btnShareClose" title="关闭">&times;</button>
+      </div>
+      <label class="share-label" for="shareNameInput">署名：会印在图上「漫步者」那一栏（留空就写“无名漫步者”）</label>
+      <input class="share-input" id="shareNameInput" maxlength="12" placeholder="输入你的名字…">
+      <div class="share-preview"><canvas id="shareCanvas" width="720" height="1080"></canvas></div>
+      <div class="share-actions">
+        <button class="primary" id="btnShareSave">💾 保存图片</button>
+        <button id="btnShareCopy">📋 复制图片</button>
+      </div>
+      <div class="share-tip">手机上也行，长按上面的预览图就能直接保存或转发给朋友。</div>
     </div>
   </div>
 
@@ -3880,6 +4017,299 @@ dialog.addEventListener('click', () => {
       drawSkinSmoke();
 
       requestAnimationFrame(gameLoop);
+    }
+
+
+    // ===== 📤 分享图生成（把成就与战绩导出成一张图） =====
+    const SHARE_NAME_KEY = 'cat_share_name';
+    const shareOverlayEl = document.getElementById('shareOverlay');
+    const shareCanvasEl = document.getElementById('shareCanvas');
+    const shareNameInputEl = document.getElementById('shareNameInput');
+    const SHARE_FONT = '"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",sans-serif';
+
+    function getShareName() {
+      const raw = (shareNameInputEl && shareNameInputEl.value || '').trim().replace(/\s+/g, ' ');
+      return raw ? raw.slice(0, 12) : '无名漫步者';
+    }
+
+    function shareRoundRect(c, x, y, w, h, r) {
+      c.beginPath();
+      c.moveTo(x + r, y);
+      c.arcTo(x + w, y, x + w, y + h, r);
+      c.arcTo(x + w, y + h, x, y + h, r);
+      c.arcTo(x, y + h, x, y, r);
+      c.arcTo(x, y, x + w, y, r);
+      c.closePath();
+    }
+
+    function shareSpacedText(c, text, cx, y, spacing) {
+      const chars = [...text];
+      let total = 0;
+      chars.forEach(ch => { total += c.measureText(ch).width + spacing; });
+      total -= spacing;
+      let x = cx - total / 2;
+      chars.forEach(ch => { c.fillText(ch, x, y); x += c.measureText(ch).width + spacing; });
+    }
+
+    function shareAchState() {
+      return achievementsList.map(a => ({ ach: a, got: unlockedAchSet.has(a.id) || a.check() }));
+    }
+
+    function drawShareCard() {
+      if (!shareCanvasEl) return;
+      const c = shareCanvasEl.getContext('2d');
+      const W = shareCanvasEl.width, H = shareCanvasEl.height;
+      c.clearRect(0, 0, W, H);
+      c.imageSmoothingEnabled = false;
+      c.textBaseline = 'alphabetic';
+      c.textAlign = 'left';
+
+      // —— 底色与边框 ——
+      const bg = c.createLinearGradient(0, 0, 0, H);
+      bg.addColorStop(0, '#261b14');
+      bg.addColorStop(0.5, '#1a1310');
+      bg.addColorStop(1, '#110c09');
+      c.fillStyle = bg;
+      c.fillRect(0, 0, W, H);
+      // 顶部微光
+      const glow = c.createRadialGradient(W / 2, 60, 10, W / 2, 60, 520);
+      glow.addColorStop(0, 'rgba(201,162,39,0.16)');
+      glow.addColorStop(1, 'rgba(201,162,39,0)');
+      c.fillStyle = glow;
+      c.fillRect(0, 0, W, 620);
+
+      c.strokeStyle = 'rgba(201,162,39,0.55)';
+      c.lineWidth = 3;
+      shareRoundRect(c, 20, 20, W - 40, H - 40, 26);
+      c.stroke();
+      c.strokeStyle = 'rgba(201,162,39,0.16)';
+      c.lineWidth = 1;
+      shareRoundRect(c, 34, 34, W - 68, H - 68, 20);
+      c.stroke();
+
+      // —— 页眉 ——
+      c.fillStyle = '#c9a227';
+      c.font = '600 19px ' + SHARE_FONT;
+      shareSpacedText(c, 'LEIDEN CANAL · AUTUMN', W / 2, 96, 5);
+
+      c.fillStyle = '#f4e5c8';
+      c.font = 'bold 52px ' + SHARE_FONT;
+      c.textAlign = 'center';
+      c.fillText('小猫漫步手帐', W / 2, 164);
+
+      c.fillStyle = '#a49e97';
+      c.font = '19px ' + SHARE_FONT;
+      c.fillText('运河畔的秋日战绩 · 与长椅上那位先生的若干次交手', W / 2, 200);
+      c.textAlign = 'left';
+
+      // —— 署名牌 ——
+      c.fillStyle = 'rgba(255,255,255,0.045)';
+      shareRoundRect(c, 60, 230, W - 120, 92, 16);
+      c.fill();
+      c.strokeStyle = 'rgba(201,162,39,0.32)';
+      c.lineWidth = 1.5;
+      shareRoundRect(c, 60, 230, W - 120, 92, 16);
+      c.stroke();
+
+      c.fillStyle = '#9c948b';
+      c.font = '15px ' + SHARE_FONT;
+      c.fillText('漫 步 者', 88, 262);
+      c.fillStyle = '#f6e7c9';
+      c.font = 'bold 34px ' + SHARE_FONT;
+      let nm = getShareName();
+      while (c.measureText(nm).width > W - 240 && nm.length > 1) nm = nm.slice(0, -1);
+      c.fillText(nm, 88, 302);
+      c.textAlign = 'right';
+      c.fillStyle = '#8c8379';
+      c.font = '16px ' + SHARE_FONT;
+      c.fillText('🐾 莱顿运河', W - 88, 300);
+      c.textAlign = 'left';
+
+      // —— 小猫立绘 ——
+      c.fillStyle = 'rgba(255,255,255,0.035)';
+      shareRoundRect(c, 60, 348, 200, 200, 18);
+      c.fill();
+      c.strokeStyle = 'rgba(201,162,39,0.2)';
+      c.lineWidth = 1;
+      shareRoundRect(c, 60, 348, 200, 200, 18);
+      c.stroke();
+
+      const skinImg = (skinCache[currentSkinId] && skinCache[currentSkinId].complete) ? skinCache[currentSkinId] : catSprite;
+      if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
+        c.drawImage(skinImg, 0, 28 * 32, 32, 32, 60 + 36, 348 + 36, 128, 128);
+      }
+
+      // —— 战绩格子 ——
+      const got = shareAchState();
+      const gotCount = got.filter(x => x.got).length;
+      const fmt = n => Number(n || 0).toLocaleString('en-US');
+      const cells = [
+        ['💬', '喵喵叫唤', fmt(totalMeowCount)],
+        ['🐾', '击倒赫尔曼', fmt(totalKoCount)],
+        ['👑', '黄金赫尔曼', fmt(totalBossKoCount)],
+        ['💎', '钻石赫尔曼', fmt(totalDiamondKoCount)],
+        ['🧇', '吃到华夫饼', fmt(totalWaffleCount)],
+        ['🐱', '被摸摸头', fmt(totalNuzzleCount)],
+        ['👣', '漫步步数', fmt(Math.floor(totalWalkDist))],
+        ['🏆', '成就收集', gotCount + ' / ' + achievementsList.length]
+      ];
+      const gx = 288, gy = 348, gw = 178, gh = 44, gapX = 16, gapY = 8;
+      cells.forEach((cell, i) => {
+        const col = i % 2, row = Math.floor(i / 2);
+        const x = gx + col * (gw + gapX), y = gy + row * (gh + gapY);
+        c.fillStyle = 'rgba(255,255,255,0.04)';
+        shareRoundRect(c, x, y, gw, gh, 10);
+        c.fill();
+        c.font = '15px ' + SHARE_FONT;
+        c.fillStyle = '#9c948b';
+        c.fillText(cell[0] + ' ' + cell[1], x + 12, y + 18);
+        c.font = 'bold 21px ' + SHARE_FONT;
+        c.fillStyle = '#f3e2c4';
+        c.textAlign = 'right';
+        c.fillText(cell[2], x + gw - 12, y + 39);
+        c.textAlign = 'left';
+      });
+
+      // —— 成就清单 ——
+      c.fillStyle = '#c9a227';
+      c.font = 'bold 22px ' + SHARE_FONT;
+      c.fillText('🏆 漫步荣耀成就', 60, 602);
+      c.font = '17px ' + SHARE_FONT;
+      c.fillStyle = '#8c8379';
+      c.textAlign = 'right';
+      c.fillText(gotCount + ' / ' + achievementsList.length + ' 已达成', W - 60, 602);
+      c.textAlign = 'left';
+
+      const unlockedAchs = got.filter(x => x.got).map(x => x.ach);
+      const veiledCount = got.filter(x => !x.got && x.ach.hidden).length;
+      const maxShow = 10;
+      const showList = unlockedAchs.slice(0, maxShow);
+      const restCount = unlockedAchs.length - showList.length;
+
+      if (showList.length === 0) {
+        c.fillStyle = '#7d736a';
+        c.font = '17px ' + SHARE_FONT;
+        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, 648);
+      } else {
+        showList.forEach((a, i) => {
+          const col = i % 2, row = Math.floor(i / 2);
+          const x = 60 + col * 312, y = 618 + row * 42;
+          c.fillStyle = 'rgba(255,255,255,0.035)';
+          shareRoundRect(c, x, y, 288, 34, 9);
+          c.fill();
+          c.font = '16px ' + SHARE_FONT;
+          c.fillStyle = '#c9a227';
+          c.fillText(a.icon || '🏆', x + 10, y + 23);
+          c.fillStyle = '#e8dcc8';
+          c.font = '16px ' + SHARE_FONT;
+          let title = a.name;
+          while (c.measureText(title).width > 232 && title.length > 1) title = title.slice(0, -1) + '…';
+          c.fillText(title, x + 42, y + 23);
+        });
+        if (restCount > 0) {
+          c.fillStyle = '#8c8379';
+          c.font = '15px ' + SHARE_FONT;
+          const lastRow = Math.ceil(showList.length / 2);
+          c.fillText('还有 ' + restCount + ' 项成就没挤进这张图…', 60, 618 + lastRow * 42 + 4);
+        }
+      }
+      if (veiledCount > 0) {
+        c.fillStyle = '#6f665e';
+        c.font = '15px ' + SHARE_FONT;
+        c.fillText('另有 ' + veiledCount + ' 个隐藏成就等着被时间拨开。', 60, 856);
+      }
+
+      // —— 页脚 ——
+      c.strokeStyle = 'rgba(201,162,39,0.18)';
+      c.lineWidth = 1;
+      c.beginPath();
+      c.moveTo(60, 924);
+      c.lineTo(W - 60, 924);
+      c.stroke();
+
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const stamp = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      c.fillStyle = '#8c8379';
+      c.font = '16px ' + SHARE_FONT;
+      c.fillText('生成于 ' + stamp, 60, 962);
+      c.textAlign = 'right';
+      c.fillStyle = '#a49e97';
+      c.fillText('莱顿运河畔的猫咪漫步', W - 60, 962);
+      c.fillStyle = '#c9a227';
+      c.font = '600 15px ' + SHARE_FONT;
+      c.fillText('ALVA.TELCOM · 小猫漫步', W - 60, 1002);
+      c.textAlign = 'left';
+    }
+
+    function openSharePanel() {
+      if (!shareOverlayEl) return;
+      if (shareNameInputEl && !shareNameInputEl.value) {
+        shareNameInputEl.value = localStorage.getItem(SHARE_NAME_KEY) || '';
+      }
+      drawShareCard();
+      shareOverlayEl.classList.add('active');
+    }
+
+    function closeSharePanel() {
+      if (shareOverlayEl) shareOverlayEl.classList.remove('active');
+    }
+
+    function shareFileName() {
+      const d = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      return 'cat-walk-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '-' + pad(d.getHours()) + pad(d.getMinutes()) + '.png';
+    }
+
+    document.getElementById('btnShareCard')?.addEventListener('click', () => {
+      openSharePanel();
+    });
+    document.getElementById('btnShareClose')?.addEventListener('click', closeSharePanel);
+    shareOverlayEl?.addEventListener('click', e => { if (e.target === shareOverlayEl) closeSharePanel(); });
+
+    if (shareNameInputEl) {
+      shareNameInputEl.addEventListener('input', () => {
+        try { localStorage.setItem(SHARE_NAME_KEY, shareNameInputEl.value.slice(0, 12)); } catch (e) {}
+        drawShareCard();
+      });
+    }
+
+    document.getElementById('btnShareSave')?.addEventListener('click', () => {
+      drawShareCard();
+      shareCanvasEl.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = shareFileName();
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }, 'image/png');
+    });
+
+    document.getElementById('btnShareCopy')?.addEventListener('click', async () => {
+      drawShareCard();
+      try {
+        if (!navigator.clipboard || !window.ClipboardItem) throw new Error('unsupported');
+        const blob = await new Promise(res => shareCanvasEl.toBlob(res, 'image/png'));
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showShareHint('📋 已复制到剪贴板，去粘贴给你的朋友吧');
+      } catch (e) {
+        showShareHint('这个浏览器不让直接复制，长按预览图保存也一样～');
+      }
+    });
+
+    function showShareHint(text) {
+      const tip = document.querySelector('.share-tip');
+      if (!tip) return;
+      tip.textContent = text;
+      tip.style.color = '#c9a227';
+      setTimeout(() => {
+        tip.textContent = '手机上也行，长按上面的预览图就能直接保存或转发给朋友。';
+        tip.style.color = '';
+      }, 3200);
     }
 
     gameLoop();
