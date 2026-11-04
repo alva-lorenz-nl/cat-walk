@@ -2660,8 +2660,11 @@ let catAction = 'idle';
         let frame = 0;
 
         if (catAction === 'scratch') {
-          row = 47;
-          frame = Math.floor(catActionTimer / 3) % 8;
+          // 弓背炸毛的两组姿势（41、42 行各 2 帧）拼成一次扑挠
+          const sSeq = [[41, 0], [41, 1], [42, 0], [42, 1]];
+          const sIdx = Math.min(sSeq.length - 1, Math.floor((24 - catActionTimer) / 5));
+          row = sSeq[sIdx][0];
+          frame = sSeq[sIdx][1];
         } else if (catAction === 'meow') {
           row = 28;
           const mSeq = [0, 1, 2, 2, 1, 0];
