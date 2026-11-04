@@ -2825,23 +2825,30 @@ let catAction = 'idle';
         );
 
         // ===== 小猫荣耀专属装备渲染（根据衣橱穿戴与姿态智能对齐） =====
-        // 领结锚点：侧身时贴在下颌线与前颈处，并随走动/挠人动作起伏
-        const sidePose = (row === 6 || row === 47);
+        // 领结锚点：按姿态分别对齐——侧走贴颈侧，挠人时头部前探左移
+        const isScratch = (row === 41);
+        const sidePose = (row === 6);
         let bowOffsetX = 0;
         let bowOffsetY = 0;
-        if (row === 6) {
+        if (sidePose) {
           const walkOffsets = [[0,0],[0,-1],[0,-2],[-2,-1],[0,0],[0,-1],[0,-2],[0,-1]];
           const off = walkOffsets[frame % 8] || [0, 0];
           bowOffsetX = off[0];
           bowOffsetY = off[1];
-        } else if (row === 47) {
-          const scratchOffsets = [[0,0],[-1,0],[0,1],[0,1],[0,1],[0,1],[-1,0]];
-          const off = scratchOffsets[frame % 7] || [0, 0];
-          bowOffsetX = off[0];
-          bowOffsetY = off[1];
         }
-        const bowX = sidePose ? (7 + bowOffsetX) : -1;
-        const bowY = sidePose ? (-10 + bowOffsetY) : -11;
+        let bowX, bowY;
+        if (isScratch) {
+          // 弓背炸毛两帧：头在身体左侧、略抬，项圈随帧落在下颌下方
+          const sf = frame % 2;
+          bowX = -6;
+          bowY = sf === 0 ? -9 : -10;
+        } else if (sidePose) {
+          bowX = 7 + bowOffsetX;
+          bowY = -10 + bowOffsetY;
+        } else {
+          bowX = -1;
+          bowY = -11;
+        }
 
         // 1. 领结与项圈渲染：环绕脖颈一圈，前挂精巧领结
         const drawBowtie = (deep, mid, light, knot, bandDark, bandLight) => {
