@@ -1648,6 +1648,9 @@
     try { hermanHitTotal = parseInt(localStorage.getItem('cat_herman_hit_total') || '0', 10) || 0; } catch (e) {}
     let hermanStageSeen = 0;
     try { hermanStageSeen = parseInt(localStorage.getItem('cat_herman_stage_seen') || '0', 10) || 0; } catch (e) {}
+    // 跨阶段时他没来得及说出口的话，攒在这里，等小猫「探头看看」时一句一句补给你
+    let hermanPendingLines = [];
+    try { hermanPendingLines = JSON.parse(localStorage.getItem('cat_herman_pending_lines') || '[]') || []; } catch (e) { hermanPendingLines = []; }
 
     const HERMAN_STAGES = [0, 20, 60, 150, 300];
     function hermanStage() {
@@ -1724,6 +1727,12 @@
     };
 
     function pickHermanIdleLine() {
+      // 先补看那些被挠过去、没听全的话
+      if (hermanPendingLines.length > 0) {
+        const pending = hermanPendingLines.shift();
+        try { localStorage.setItem('cat_herman_pending_lines', JSON.stringify(hermanPendingLines)); } catch (e) {}
+        return pending;
+      }
       const s = hermanStage();
       if (s > 0 && hermanIdleByStage[s]) {
         const pool = hermanIdleByStage[s];
@@ -1748,9 +1757,15 @@
       try { localStorage.setItem('cat_herman_hit_total', hermanHitTotal); } catch (e) {}
       const s = hermanStage();
       if (s > hermanStageSeen) {
+        // 一口气跨过好几个阶段也不怕，全部攒下来，留给「探头看看」
+        for (let i = hermanStageSeen + 1; i <= s; i++) {
+          const line = hermanMilestoneLines[HERMAN_STAGES[i]];
+          if (line) hermanPendingLines.push(line);
+        }
         hermanStageSeen = s;
         try { localStorage.setItem('cat_herman_stage_seen', hermanStageSeen); } catch (e) {}
-        return hermanMilestoneLines[HERMAN_STAGES[s]] || null;
+        try { localStorage.setItem('cat_herman_pending_lines', JSON.stringify(hermanPendingLines)); } catch (e) {}
+        return hermanPendingLines.length > 0 ? '__pending__' : null;
       }
       return null;
     }
@@ -3998,6 +4013,7 @@ dialog.addEventListener('click', () => {
           }, 1500);
         } else {
           const milestoneLine = recordHermanHit();
+          const hasPending = milestoneLine === '__pending__';
           if (bench.bossType === 'diamond') {
             const diaText = diamondScratchDialogues[diamondScratchIndex % diamondScratchDialogues.length];
             showDialog(`【暴击！-${damage} HP】` + diaText);
@@ -4008,7 +4024,12 @@ dialog.addEventListener('click', () => {
             bossScratchIndex++;
           } else {
             const baseText = pickHermanScratchLine();
-            showDialog(`【暴击！-${damage} HP】` + (milestoneLine || baseText), { dwell: milestoneLine ? 8000 : undefined });
+            showDialog(`【暴击！-${damage} HP】` + baseText);
+          }
+          if (hasPending) {
+            setTimeout(() => {
+              if (bench.hp > 0) showDialog("赫尔曼欲言又止，最后只是低头理了理衣襟。……用「🌿 探头看看」凑近一点，他好像有话要说。");
+            }, 1200);
           }
         }
       } else {
