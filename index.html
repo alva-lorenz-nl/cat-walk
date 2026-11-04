@@ -1008,7 +1008,7 @@
     <button class="btn-time" data-step="24" data-ach="time_jump_1d" style="display:none">1天 ⏩</button>
     <button class="btn-time" data-step="168" data-ach="time_jump_30d" style="display:none">7天 ⏩</button>
     <button class="btn-follow active" id="btnFollowTime">回到现实</button>
-    <span class="time-hint">长按连拨 · Shift+←→ 微调 · Shift+↑↓ 整天 · R 归零</span>
+    <span class="time-hint">长按连拨 · Shift+←→ 微调 · Shift+↑↓ 整天 · R 归零 · 极限 ±999天</span>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1485,7 +1485,7 @@
     let timeSkipMaxHours = 0;     // 单次跳过的最大值
     let timeBackTotalHours = 0;   // 累计往回拨的小时数
     let timeBackMinOffset = 0;    // 曾拨到过的最早偏移（负数）
-    const TIME_LIMIT_HOURS = 8760; // 手动调节的极限：正负各一年
+    const TIME_LIMIT_HOURS = 23976; // 手动调节的极限：正负各 999 天
     let timeLimitWarned = false;   // 是否已经警告过（等待小猫收手）
     let timeLimitWarnDir = 0;      // 警告时被推的方向
     let timeLimitWarnAt = 0;       // 警告弹出的时刻
