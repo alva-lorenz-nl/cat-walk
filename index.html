@@ -1008,6 +1008,7 @@
     <button class="btn-time" data-step="24" data-ach="time_jump_1d" style="display:none">1天 ⏩</button>
     <button class="btn-time" data-step="168" data-ach="time_jump_30d" style="display:none">7天 ⏩</button>
     <button class="btn-follow active" id="btnFollowTime">回到现实</button>
+    <span class="time-hint">长按连拨 · Shift+←→ 微调 · Shift+↑↓ 整天 · R 归零</span>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1657,11 +1658,83 @@
       }
     }
 
+    // ---- 长按连续拨动 ----
+    let pressDelayTimer = null;
+    let pressRepeatTimer = null;
+    let pressDidRepeat = false;
+
+    function stopPress() {
+      if (pressDelayTimer) { clearTimeout(pressDelayTimer); pressDelayTimer = null; }
+      if (pressRepeatTimer) { clearInterval(pressRepeatTimer); pressRepeatTimer = null; }
+    }
+
     timeStepBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const step = parseFloat(btn.dataset.step);
-        if (!isNaN(step)) applyTimeStep(step);
+      const step = parseFloat(btn.dataset.step);
+      if (isNaN(step)) return;
+
+      btn.addEventListener('pointerdown', (ev) => {
+        if (ev.button !== undefined && ev.button !== 0) return;
+        ev.preventDefault();
+        stopPress();
+        pressDidRepeat = false;
+        // 按住 400ms 才开始连拨，轻点仍算一次
+        pressDelayTimer = setTimeout(() => {
+          pressDelayTimer = null;
+          pressDidRepeat = true;
+          applyTimeStep(step);
+          pressRepeatTimer = setInterval(() => applyTimeStep(step), 120);
+        }, 400);
       });
+      btn.addEventListener('pointerup', stopPress);
+      btn.addEventListener('pointerleave', stopPress);
+      btn.addEventListener('pointercancel', stopPress);
+      btn.addEventListener('click', (ev) => {
+        if (pressDidRepeat) { pressDidRepeat = false; ev.preventDefault(); return; }
+        applyTimeStep(step);
+      });
+      btn.addEventListener('contextmenu', ev => ev.preventDefault());
+    });
+    window.addEventListener('pointerup', stopPress);
+    window.addEventListener('blur', stopPress);
+
+    // ---- 键盘控制 ----
+    let lastKeyStepAt = 0;
+    function timeButtonUnlocked(achId) {
+      const btn = document.querySelector(`.btn-time[data-ach="${achId}"]`);
+      return !!btn && btn.style.display !== 'none';
+    }
+
+    window.addEventListener('keydown', (ev) => {
+      const tag = ev.target && ev.target.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const nowMs = performance.now();
+
+      // 方向键本身在管小猫走路，所以时间微调用 Shift + 方向键
+      if (!ev.shiftKey) return;
+
+      let step = 0;
+      switch (ev.key) {
+        case 'ArrowLeft': step = -1; break;
+        case 'ArrowRight': step = 1; break;
+        case 'ArrowDown': step = -24; break;
+        case 'ArrowUp': step = 24; break;
+        case 'r': case 'R': case 'Home':
+          ev.preventDefault();
+          if (timeTargetHours !== 0) {
+            timeTargetHours = 0;
+            saveTimeState();
+            startTimeAnim();
+            refreshTimeUI();
+          }
+          return;
+        default: return;
+      }
+
+      ev.preventDefault();
+      if (Math.abs(step) === 24 && !timeButtonUnlocked('time_jump_1d')) return;
+      if (ev.repeat && nowMs - lastKeyStepAt < 110) return;
+      lastKeyStepAt = nowMs;
+      applyTimeStep(step);
     });
 
     if (btnFollowTimeEl) {
@@ -2865,8 +2938,8 @@ dialog.addEventListener('click', () => {
             showDialog(`【🏆 成就解锁！】${ach.icon}『${ach.name}』——${ach.desc}！（${ach.reward}）✨`, { dwell: 6000 });
           }, idx * 1200);
         });
+        renderAchievementsUI();
       }
-      renderAchievementsUI();
     }
 
     function renderAchievementsUI() {
@@ -3350,6 +3423,7 @@ dialog.addEventListener('click', () => {
     // 控制与按键绑定
     const keys = {};
     window.addEventListener('keydown', e => {
+      if (e.shiftKey && e.key.startsWith('Arrow')) return; // Shift+方向键留给时间微调
       keys[e.key] = true;
       if (e.key === ' ' || e.key === 'Enter') interact();
       if (e.key === 'm' || e.key === 'M') catMeow();
