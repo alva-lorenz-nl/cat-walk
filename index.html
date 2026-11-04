@@ -1015,6 +1015,18 @@
       skinCache[sk.id] = img;
     });
 
+    // ===== 换过的毛色图鉴（成就用） =====
+    const usedSkinSet = new Set();
+    try {
+      const savedSkins = JSON.parse(localStorage.getItem('cat_skins_used') || '[]');
+      if (Array.isArray(savedSkins)) savedSkins.forEach(id => usedSkinSet.add(id));
+    } catch (e) {}
+    usedSkinSet.add(currentSkinId);
+    function saveUsedSkins() {
+      try { localStorage.setItem('cat_skins_used', JSON.stringify([...usedSkinSet])); } catch (e) {}
+    }
+    saveUsedSkins();
+
     // ===== 换毛色烟雾特效 =====
     const smokePuffs = [];
     function spawnSkinSmoke(cx, cy, count, spread) {
@@ -1081,6 +1093,8 @@
 
       currentSkinId = skinId;
       localStorage.setItem('cat_walk_skin', skinId);
+      usedSkinSet.add(skinId);
+      saveUsedSkins();
       renderSkinsUI();
 
       // 先让弹窗退场，烟雾才能在画面上被看见
@@ -1452,6 +1466,14 @@
           flyingWaffle.active = false;
           const isDiamondWaffle = (flyingWaffle.waffleType === 'diamond');
           const isGoldWaffle = (flyingWaffle.waffleType === 'gold');
+
+          totalWaffleCount++;
+          if (isDiamondWaffle || isGoldWaffle) totalLegendWaffle++;
+          try {
+            localStorage.setItem('cat_waffle_count', totalWaffleCount);
+            localStorage.setItem('cat_legend_waffle', totalLegendWaffle);
+          } catch (e) {}
+          checkAchievements();
           const crumbCount = isDiamondWaffle ? 32 : (isGoldWaffle ? 24 : 14);
 
           for (let i = 0; i < crumbCount; i++) {
@@ -2171,6 +2193,23 @@ dialog.addEventListener('click', () => {
     let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
     let totalBossKoCount = parseInt(localStorage.getItem('cat_boss_ko_count') || '0', 10);
     let totalDiamondKoCount = parseInt(localStorage.getItem('cat_diamond_ko_count') || '0', 10);
+    let totalWaffleCount = parseInt(localStorage.getItem('cat_waffle_count') || '0', 10);
+    let totalLegendWaffle = parseInt(localStorage.getItem('cat_legend_waffle') || '0', 10);
+    let totalNuzzleCount = parseInt(localStorage.getItem('cat_nuzzle_count') || '0', 10);
+    let totalWalkDist = parseFloat(localStorage.getItem('cat_walk_dist') || '0') || 0;
+    let nightWalkFlag = localStorage.getItem('cat_night_flag') === '1';
+    let equipBothFlag = localStorage.getItem('cat_equip_both') === '1';
+    let walkSaveTick = 0;
+
+    function touchNightTime() {
+      if (nightWalkFlag) return;
+      const h = new Date().getHours();
+      if (h >= 22 || h < 5) {
+        nightWalkFlag = true;
+        try { localStorage.setItem('cat_night_flag', '1'); } catch (e) {}
+        checkAchievements();
+      }
+    }
 
     const modalStatMeow = document.getElementById('modalStatMeow');
     const modalStatKO = document.getElementById('modalStatKO');
@@ -2272,6 +2311,123 @@ dialog.addEventListener('click', () => {
         reward: '至高荣耀：【👑 纯钻璀璨小王冠】',
         check: () => totalDiamondKoCount >= 10,
         progress: () => `${Math.min(totalDiamondKoCount, 10)}/10`
+      },
+      {
+        id: 'meow_100',
+        icon: '🎼',
+        name: '运河女高音',
+        desc: '累计喵叫 100 声，把运河唱成一条五线谱',
+        reward: '称号：莱顿运河首席喵唱家',
+        check: () => totalMeowCount >= 100,
+        progress: () => `${Math.min(totalMeowCount, 100)}/100`
+      },
+      {
+        id: 'ko_20',
+        icon: '💢',
+        name: '长椅上的噩梦',
+        desc: '累计击倒赫尔曼 20 次',
+        reward: '称号：长椅清场专员',
+        check: () => totalKoCount >= 20,
+        progress: () => `${Math.min(totalKoCount, 20)}/20`
+      },
+      {
+        id: 'ko_100',
+        icon: '🩹',
+        name: '赫尔曼的心理阴影',
+        desc: '累计击倒赫尔曼 100 次，连他自己都开始怀疑人生',
+        reward: '称号：永动轮终身名誉克星',
+        check: () => totalKoCount >= 100,
+        progress: () => `${Math.min(totalKoCount, 100)}/100`
+      },
+      {
+        id: 'waffle_1',
+        icon: '🧇',
+        name: '焦糖外交',
+        desc: '第一次吃到阿尔瓦抛来的华夫饼',
+        reward: '称号：牛皮纸袋VIP',
+        check: () => totalWaffleCount >= 1,
+        progress: () => `${Math.min(totalWaffleCount, 1)}/1`
+      },
+      {
+        id: 'waffle_30',
+        icon: '🥞',
+        name: '阿尔瓦的深夜厨房',
+        desc: '累计被投喂华夫饼 30 次',
+        reward: '称号：烤炉常驻客（阿尔瓦的烤箱从此不关）',
+        check: () => totalWaffleCount >= 30,
+        progress: () => `${Math.min(totalWaffleCount, 30)}/30`
+      },
+      {
+        id: 'legend_waffle',
+        icon: '🌟',
+        name: '传说级概率',
+        desc: '亲眼见证一次黄金或钻石华夫饼的诞生',
+        reward: '称号：欧气附体的猫',
+        check: () => totalLegendWaffle >= 1,
+        progress: () => `${Math.min(totalLegendWaffle, 1)}/1`
+      },
+      {
+        id: 'nuzzle_1',
+        icon: '💗',
+        name: '第一声呼噜',
+        desc: '第一次凑到阿尔瓦脚边互动撒娇',
+        reward: '称号：教授的心头软肉',
+        check: () => totalNuzzleCount >= 1,
+        progress: () => `${Math.min(totalNuzzleCount, 1)}/1`
+      },
+      {
+        id: 'nuzzle_30',
+        icon: '🫧',
+        name: '阿尔瓦的影子',
+        desc: '累计和阿尔瓦贴贴 30 次',
+        reward: '称号：大衣下摆的常驻住户',
+        check: () => totalNuzzleCount >= 30,
+        progress: () => `${Math.min(totalNuzzleCount, 30)}/30`
+      },
+      {
+        id: 'skin_3',
+        icon: '🎨',
+        name: '毛色收藏家',
+        desc: '体验过 3 种不同的毛色',
+        reward: '称号：衣橱试穿狂魔',
+        check: () => usedSkinSet.size >= 3,
+        progress: () => `${Math.min(usedSkinSet.size, 3)}/3`
+      },
+      {
+        id: 'skin_all',
+        icon: '🌈',
+        name: '换毛全图鉴',
+        desc: '把五种毛色全部穿一遍',
+        reward: '称号：莱顿运河的彩虹猫',
+        check: () => usedSkinSet.size >= CAT_SKINS.length,
+        progress: () => `${Math.min(usedSkinSet.size, CAT_SKINS.length)}/${CAT_SKINS.length}`
+      },
+      {
+        id: 'equip_both',
+        icon: '🎀',
+        name: '盛装出行',
+        desc: '同时戴上头部与颈部两件装扮',
+        reward: '称号：运河畔最体面的猫',
+        check: () => equipBothFlag,
+        progress: () => `${equipBothFlag ? 1 : 0}/1`
+      },
+      {
+        id: 'walk_far',
+        icon: '👟',
+        name: '运河长跑猫',
+        desc: '沿运河累计走出 20000 像素的路程',
+        reward: '称号：堤岸计步器终结者',
+        check: () => totalWalkDist >= 20000,
+        progress: () => `${Math.min(Math.floor(totalWalkDist), 20000)}/20000`
+      },
+      {
+        id: 'night_walk',
+        icon: '🌙',
+        name: '深夜的运河',
+        desc: '在夜里十点后或凌晨时分还出来散步',
+        reward: '称号：不睡觉的小夜猫',
+        check: () => nightWalkFlag,
+        progress: () => `${nightWalkFlag ? 1 : 0}/1`
       }
     ];
 
@@ -2505,6 +2661,11 @@ dialog.addEventListener('click', () => {
         const item = inventoryItems.find(it => it.id === itemId);
         showDialog(`【装扮衣橱】小猫戴上了『${item ? item.name : '装扮'}』！整只猫神采奕奕～✨`);
       }
+      if (!equipBothFlag && userEquipment.head && userEquipment.neck) {
+        equipBothFlag = true;
+        try { localStorage.setItem('cat_equip_both', '1'); } catch (e) {}
+        checkAchievements();
+      }
     };
 
     // 使用道具/点心
@@ -2646,8 +2807,12 @@ dialog.addEventListener('click', () => {
       const distAlva = Math.abs(cat.x - alva.x);
       const distHerman = Math.abs(cat.x - (bench.x + 18));
 
+      touchNightTime();
       if (distAlva < 38) {
         alva.heartTimer = 30;
+        totalNuzzleCount++;
+        try { localStorage.setItem('cat_nuzzle_count', totalNuzzleCount); } catch (e) {}
+        checkAchievements();
         showDialog(alvaDialogues[alvaDialogIndex % alvaDialogues.length]);
         alvaDialogIndex++;
       } else if (distHerman < 45) {
@@ -2854,6 +3019,13 @@ dialog.addEventListener('click', () => {
       if (isMoving) {
         cat.walkTimer += 1;
         cat.idleTimer = 0;
+        totalWalkDist += Math.abs(cat.vx);
+        walkSaveTick++;
+        if (walkSaveTick >= 300) {
+          walkSaveTick = 0;
+          try { localStorage.setItem('cat_walk_dist', totalWalkDist.toFixed(0)); } catch (e) {}
+          checkAchievements();
+        }
       } else {
         cat.idleTimer += 1;
         cat.walkTimer = 0;
