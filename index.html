@@ -709,6 +709,8 @@
       color: #d9cdbb;
     }
     .time-controls { flex-wrap: wrap; }
+    .time-group { display: flex; align-items: center; gap: 6px; }
+    .time-clock { font-size: 13px; opacity: 0.8; }
     .btn-time {
       padding: 3px 8px;
       border: 0;
@@ -745,6 +747,45 @@
     }
     .btn-follow:hover { background: #85705f; }
     .btn-follow.active { background: #c9a06a; color: #2a2018; }
+    /* 手机端：把底部两组按键重排成好按的网格，时间条变成「左退 | 读数 | 右进」三栏 */
+    @media (max-width: 620px), (orientation: portrait) {
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+        width: min(96vw, 460px);
+        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+      }
+      .controls .btn {
+        min-height: 42px;
+        padding: 8px 4px;
+        font-size: 12px;
+        border-radius: 9px;
+      }
+      .time-controls {
+        display: grid;
+        grid-template-columns: auto minmax(86px, 1fr) auto;
+        gap: 7px 5px;
+        width: min(96vw, 460px);
+        padding: 8px 10px;
+      }
+      .time-back { justify-content: flex-end; }
+      .time-fwd { justify-content: flex-start; }
+      .time-now { justify-self: center; font-size: 13px; }
+      .time-controls .btn-time { min-height: 32px; padding: 5px 9px; font-size: 12px; }
+      .btn-follow {
+        grid-column: 1 / -1;
+        justify-self: center;
+        padding: 7px 18px;
+        font-size: 12px;
+      }
+      .time-controls .time-hint {
+        grid-column: 1 / -1;
+        text-align: center;
+        font-size: 9px;
+        line-height: 1.5;
+      }
+    }
     .time-badge {
       position: absolute;
       top: 6px;
@@ -999,16 +1040,20 @@
   </div>
 
   <div class="time-controls">
-    <span>🕰</span>
-    <button class="btn-time" data-step="-168" data-ach="time_back_30d" style="display:none">⏪ 7天</button>
-    <button class="btn-time" data-step="-24" data-ach="time_back_1d" style="display:none">⏪ 1天</button>
-    <button class="btn-time" data-step="-1">⏪ 1时</button>
+    <div class="time-group time-back">
+      <span class="time-clock">🕰</span>
+      <button class="btn-time" data-step="-168" data-ach="time_back_30d" style="display:none">⏪ 7天</button>
+      <button class="btn-time" data-step="-24" data-ach="time_back_1d" style="display:none">⏪ 1天</button>
+      <button class="btn-time" data-step="-1">⏪ 1时</button>
+    </div>
     <span class="time-now" id="timeNow">跟随现实</span>
-    <button class="btn-time" data-step="1">1时 ⏩</button>
-    <button class="btn-time" data-step="24" data-ach="time_jump_1d" style="display:none">1天 ⏩</button>
-    <button class="btn-time" data-step="168" data-ach="time_jump_30d" style="display:none">7天 ⏩</button>
+    <div class="time-group time-fwd">
+      <button class="btn-time" data-step="1">1时 ⏩</button>
+      <button class="btn-time" data-step="24" data-ach="time_jump_1d" style="display:none">1天 ⏩</button>
+      <button class="btn-time" data-step="168" data-ach="time_jump_30d" style="display:none">7天 ⏩</button>
+    </div>
     <button class="btn-follow active" id="btnFollowTime">回到现实</button>
-    <span class="time-hint">长按连拨 · Shift+←→ 微调 · Shift+↑↓ 整天 · R 归零 · 极限 ±999天</span>
+    <span class="time-hint">长按连拨 · Shift+←→ 微调 · Shift+↑↓ 整天 · R 归零</span>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1631,8 +1676,8 @@
     function refreshTimeUI() {
       if (timeNowEl) {
         const atLimit = Math.abs(timeTargetHours) >= TIME_LIMIT_HOURS;
-        timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours)) + (atLimit ? ' · 极限' : '');
-        timeNowEl.style.color = atLimit ? '#ff6b6b' : '';
+        timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours));
+        timeNowEl.style.color = atLimit ? '#ffb4a2' : '';
       }
       if (btnFollowTimeEl) btnFollowTimeEl.classList.toggle('active', timeTargetHours === 0 && !timeAnim);
       lastBadgeText = '';
@@ -3058,7 +3103,7 @@ dialog.addEventListener('click', () => {
         icon: '🌇',
         hidden: true,
         name: '走到时间的尽头',
-        desc: '把运河畔的时针一路拨到最远处，999 天以后的风里，已经闻不到今年的桂花味了',
+        desc: '把运河畔的时针一路拨到再也不能往前的地方，那天的风里，已经闻不到今年的桂花味了',
         reward: '称号：站在尽头的人',
         check: () => timeMaxOffsetHours >= TIME_LIMIT_HOURS,
         progress: () => `${Math.min(Math.floor(timeMaxOffsetHours / 24), 999)}/999天`
@@ -3068,7 +3113,7 @@ dialog.addEventListener('click', () => {
         icon: '🌌',
         hidden: true,
         name: '退回时间的源头',
-        desc: '把时针一路往回拨到最远处，999 天以前的运河，堤岸还是刚砌好的样子',
+        desc: '把时针一路往回拨到再也拨不动的地方，那时的运河，堤岸还是刚砌好的样子',
         reward: '称号：见过运河年轻的人',
         check: () => timeBackMinOffset <= -TIME_LIMIT_HOURS,
         progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 999)}/999天`
