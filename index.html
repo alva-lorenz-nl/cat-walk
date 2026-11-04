@@ -695,6 +695,42 @@
       image-rendering: pixelated;
       image-rendering: crisp-edges;
     }
+    .time-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.28);
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.45);
+      font-size: 12px;
+      color: #d9cdbb;
+    }
+    .time-controls input[type="range"] {
+      width: 150px;
+      accent-color: #c9a06a;
+      cursor: pointer;
+    }
+    .time-controls .time-now {
+      min-width: 76px;
+      text-align: center;
+      font-family: monospace;
+      color: #f3e6cf;
+    }
+    .btn-follow {
+      padding: 3px 9px;
+      border: 0;
+      border-radius: 8px;
+      background: #6b5c4f;
+      color: #f3e6cf;
+      font-size: 11px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-follow:hover { background: #85705f; }
+    .btn-follow.active { background: #c9a06a; color: #2a2018; }
     .time-badge {
       position: absolute;
       top: 6px;
@@ -946,6 +982,13 @@
     <button class="btn" id="btnAction">🌿 探头看看</button>
     <button class="btn btn-scratch" id="btnScratch">🐾 挠他！</button>
     <button class="btn" id="btnRight">往右走 ▶</button>
+  </div>
+
+  <div class="time-controls">
+    <span>🕰</span>
+    <input type="range" id="timeSlider" min="0" max="24" step="0.25" value="12">
+    <span class="time-now" id="timeNow">跟随现实</span>
+    <button class="btn-follow active" id="btnFollowTime">跟随现实时间</button>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1414,10 +1457,27 @@
       return '🌙';
     }
 
+    // 手动时间：null 表示跟随现实时间，否则是 0~24 的小时数
+    let manualHour = null;
+    try {
+      const savedManual = localStorage.getItem('cat_manual_hour');
+      if (savedManual !== null && savedManual !== '') {
+        const v = parseFloat(savedManual);
+        if (!isNaN(v) && v >= 0 && v <= 24) manualHour = v;
+      }
+    } catch (e) {}
+
+    function hourToClock(h) {
+      const total = Math.round((h % 24) * 60) % 1440;
+      return String(Math.floor(total / 60)).padStart(2, '0') + ':' + String(total % 60).padStart(2, '0');
+    }
+
     let lastBadgeMinute = -1;
+    let lastBadgeText = '';
     function computePalette() {
       const now = new Date();
-      const hh = now.getHours() + now.getMinutes() / 60;
+      const realHour = now.getHours() + now.getMinutes() / 60;
+      const hh = (manualHour === null) ? realHour : manualHour;
       let a = SKY_KEYFRAMES[0], b = SKY_KEYFRAMES[1];
       for (let i = 0; i < SKY_KEYFRAMES.length - 1; i++) {
         if (hh >= SKY_KEYFRAMES[i].h && hh <= SKY_KEYFRAMES[i + 1].h) {
@@ -1435,14 +1495,14 @@
       });
 
       const minuteNow = now.getHours() * 60 + now.getMinutes();
-      if (minuteNow !== lastBadgeMinute) {
+      const badgeText = `${getDayPhaseIcon(hh)} ${getDayPhaseName(hh)} ${hourToClock(hh)}${manualHour === null ? '' : ' · 手动'}`;
+      if (badgeText !== lastBadgeText) {
+        lastBadgeText = badgeText;
         lastBadgeMinute = minuteNow;
         const badge = document.getElementById('timeBadge');
-        if (badge) {
-          const hhStr = String(now.getHours()).padStart(2, '0');
-          const mmStr = String(now.getMinutes()).padStart(2, '0');
-          badge.innerText = `${getDayPhaseIcon(hh)} ${getDayPhaseName(hh)} ${hhStr}:${mmStr}`;
-        }
+        if (badge) badge.innerText = badgeText;
+        const timeNowEl = document.getElementById('timeNow');
+        if (timeNowEl) timeNowEl.innerText = manualHour === null ? '跟随现实' : hourToClock(hh);
       }
       return pal;
     }
@@ -1475,6 +1535,47 @@
         px(cx, cy - 3, 1, 1, '#d9e0f0');
       }
     }
+
+    // ===== 手动调节时间控件 =====
+    const timeSliderEl = document.getElementById('timeSlider');
+    const btnFollowTimeEl = document.getElementById('btnFollowTime');
+
+    function syncTimeControls() {
+      if (!timeSliderEl || !btnFollowTimeEl) return;
+      if (manualHour === null) {
+        const now = new Date();
+        const h = now.getHours() + now.getMinutes() / 60;
+        timeSliderEl.value = String(Math.round(h * 4) / 4);
+        btnFollowTimeEl.classList.add('active');
+        btnFollowTimeEl.innerText = '跟随现实时间';
+      } else {
+        timeSliderEl.value = String(manualHour);
+        btnFollowTimeEl.classList.remove('active');
+        btnFollowTimeEl.innerText = '回到现实时间';
+      }
+    }
+
+    if (timeSliderEl) {
+      timeSliderEl.addEventListener('input', () => {
+        manualHour = parseFloat(timeSliderEl.value);
+        if (isNaN(manualHour)) manualHour = null;
+        lastBadgeText = '';
+        lastBadgeMinute = -1;
+        syncTimeControls();
+        try { localStorage.setItem('cat_manual_hour', String(manualHour)); } catch (e) {}
+      });
+    }
+    if (btnFollowTimeEl) {
+      btnFollowTimeEl.addEventListener('click', () => {
+        manualHour = null;
+        lastBadgeText = '';
+        lastBadgeMinute = -1;
+        try { localStorage.removeItem('cat_manual_hour'); } catch (e) {}
+        syncTimeControls();
+      });
+    }
+    syncTimeControls();
+    setInterval(() => { if (manualHour === null) syncTimeControls(); }, 60000);
 
     function drawScene() {
       const pal = computePalette();
