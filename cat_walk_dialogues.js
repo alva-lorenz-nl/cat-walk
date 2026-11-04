@@ -244,4 +244,8 @@ const CatWalkData = {
 // 挂载到全局变量或模块供直接调用
 if (typeof window !== 'undefined') {
   window.CatWalkData = CatWalkData;
+  window.CatWalkDialogues = CatWalkData;
+}
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = CatWalkData;
 }
