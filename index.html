@@ -2343,8 +2343,8 @@ dialog.addEventListener('click', () => {
         id: 'waffle_1',
         icon: '🧇',
         name: '焦糖外交',
-        desc: '第一次吃到阿尔瓦抛来的华夫饼',
-        reward: '称号：牛皮纸袋VIP',
+        desc: '第一次看着阿尔瓦把华夫饼抛到赫尔曼身上',
+        reward: '称号：旁观席第一排贵宾',
         check: () => totalWaffleCount >= 1,
         progress: () => `${Math.min(totalWaffleCount, 1)}/1`
       },
@@ -2352,8 +2352,8 @@ dialog.addEventListener('click', () => {
         id: 'waffle_30',
         icon: '🥞',
         name: '阿尔瓦的深夜厨房',
-        desc: '累计被投喂华夫饼 30 次',
-        reward: '称号：烤炉常驻客（阿尔瓦的烤箱从此不关）',
+        desc: '累计围观赫尔曼被投喂华夫饼 30 次',
+        reward: '称号：牛皮纸袋见证人',
         check: () => totalWaffleCount >= 30,
         progress: () => `${Math.min(totalWaffleCount, 30)}/30`
       },
