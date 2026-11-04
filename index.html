@@ -2562,7 +2562,7 @@
         const biteMarks = [0.22, 0.45, 0.66, 0.86];
         while (ea.bites < biteMarks.length && et >= biteMarks[ea.bites]) {
           ea.bites++;
-          const crumbN = ea.type === 'diamond' ? 9 : (ea.type === 'gold' ? 7 : 5);
+          const crumbN = ea.mini ? 3 : (ea.type === 'diamond' ? 9 : (ea.type === 'gold' ? 7 : 5));
           for (let i = 0; i < crumbN; i++) {
             let biteColor;
             if (ea.type === 'diamond') {
@@ -2870,7 +2870,29 @@ function drawPixelHerman(hx, hy) {
         px(hx - 7, hy + 4, 2, 2, '#f4cfb2');
 
         const eating = bench.eatAnim;
-        if (eating) {
+        if (eating && eating.mini) {
+          const et = Math.min(1, eating.t / eating.dur);
+          const chewUp = Math.floor(eating.t / 5) % 2 === 0;
+          // 自愈小零嘴：只是把小块华夫饼递到嘴边，动作幅度小得多
+          px(hx + 5, hy - 1, 2, 5, suitMain);
+          px(hx + 4, hy - 4, 2, 3, suitMain);
+          px(hx + 3, hy - 5, 2, 2, '#f4cfb2');
+          let biteSize = 0;
+          if (et < 0.5) biteSize = 3;
+          else if (et < 0.9) biteSize = 2;
+          if (biteSize > 0) {
+            const bx0 = hx + (biteSize === 3 ? 0 : 1);
+            const by0 = hy - 7 + (biteSize === 3 ? 0 : 1) + (chewUp ? 0 : 1);
+            px(bx0, by0, biteSize, biteSize, '#b86b24');
+            if (biteSize >= 3) {
+              px(bx0 + 1, by0 + 1, 1, 1, '#f3af4a');
+              px(bx0 + 1, by0 + 1, 1, 1, '#fff2a8');
+            } else {
+              px(bx0, by0, biteSize, biteSize, '#f3af4a');
+            }
+          }
+          if (chewUp) px(hx - 2, hy - 8, 1, 2, '#f2ceb6');
+        } else if (eating) {
           const et = Math.min(1, eating.t / eating.dur);
           const chewUp = Math.floor(eating.t / 5) % 2 === 0;
           // 抬起的右臂：肘弯向上，手掌托着华夫饼
@@ -4311,6 +4333,16 @@ dialog.addEventListener('click', () => {
             const healAmt = isDiamond ? 8 : (bench.bossType === 'gold' ? 5 : 2);
             bench.hp = Math.min(bench.maxHp, bench.hp + healAmt);
             bench.healFlash = 18; // 触发头顶回血小晶芒
+            // 没挨打时的自愈：掏出一小块华夫饼，小口小口啃两下
+            if (!bench.eatAnim) {
+              bench.eatAnim = {
+                t: 0,
+                dur: 26,
+                type: 'normal',
+                bites: 0,
+                mini: true
+              };
+            }
           }
         } else {
           bench.healTimer = 0;
