@@ -708,10 +708,24 @@
       font-size: 12px;
       color: #d9cdbb;
     }
-    .time-controls input[type="range"] {
-      width: 150px;
-      accent-color: #c9a06a;
+    .time-controls { flex-wrap: wrap; }
+    .btn-time {
+      padding: 3px 8px;
+      border: 0;
+      border-radius: 8px;
+      background: rgba(120, 104, 88, 0.55);
+      color: #f0e3cd;
+      font-size: 11px;
       cursor: pointer;
+      transition: background 0.15s, transform 0.08s;
+      user-select: none;
+    }
+    .btn-time:hover { background: rgba(160, 138, 112, 0.8); }
+    .btn-time:active { transform: scale(0.93); }
+    .time-controls .time-hint {
+      font-size: 10px;
+      color: rgba(217, 205, 187, 0.55);
+      letter-spacing: 0.3px;
     }
     .time-controls .time-now {
       min-width: 76px;
@@ -986,9 +1000,15 @@
 
   <div class="time-controls">
     <span>🕰</span>
-    <input type="range" id="timeSlider" min="0" max="24" step="0.25" value="12">
+    <button class="btn-time" data-step="-168">⏪ 7天</button>
+    <button class="btn-time" data-step="-24">⏪ 1天</button>
+    <button class="btn-time" data-step="-1">⏪ 1时</button>
     <span class="time-now" id="timeNow">跟随现实</span>
-    <button class="btn-follow active" id="btnFollowTime">跟随现实时间</button>
+    <button class="btn-time" data-step="1">1时 ⏩</button>
+    <button class="btn-time" data-step="24">1天 ⏩</button>
+    <button class="btn-time" data-step="168">7天 ⏩</button>
+    <button class="btn-follow active" id="btnFollowTime">回到现实</button>
+    <span class="time-hint">Shift 点击 ×10</span>
   </div>
 
   <div class="tips">键盘快捷键：A/D 移动 | M 喵叫 | 空格 互动 | F 挠他 | T 战绩 | C 换毛色 | I 衣橱</div>
@@ -1457,15 +1477,36 @@
       return '🌙';
     }
 
-    // 手动时间：null 表示跟随现实时间，否则是 0~24 的小时数
-    let manualHour = null;
+    // 手动时间：以「相对现实时间的偏移小时数」记录，0 表示跟随现实
+    let timeOffsetHours = 0;
+    let timeSkipTotalHours = 0;   // 累计手动跳过的小时数
+    let timeSkipMaxHours = 0;     // 单次跳过的最大值
     try {
-      const savedManual = localStorage.getItem('cat_manual_hour');
-      if (savedManual !== null && savedManual !== '') {
-        const v = parseFloat(savedManual);
-        if (!isNaN(v) && v >= 0 && v <= 24) manualHour = v;
-      }
+      const v = parseFloat(localStorage.getItem('cat_time_offset') || '0');
+      if (!isNaN(v)) timeOffsetHours = v;
+      const t = parseFloat(localStorage.getItem('cat_time_skip_total') || '0');
+      if (!isNaN(t)) timeSkipTotalHours = t;
+      const m = parseFloat(localStorage.getItem('cat_time_skip_max') || '0');
+      if (!isNaN(m)) timeSkipMaxHours = m;
     } catch (e) {}
+
+    function mod24(h) {
+      let r = h % 24;
+      if (r < 0) r += 24;
+      return r;
+    }
+
+    function formatOffset(hours) {
+      if (!hours) return '跟随现实';
+      const sign = hours > 0 ? '+' : '-';
+      const abs = Math.abs(hours);
+      const d = Math.floor(abs / 24);
+      const hh = Math.round(abs - d * 24);
+      let out = '';
+      if (d) out += d + '天';
+      if (hh) out += hh + '时';
+      return sign + (out || '0时');
+    }
 
     function hourToClock(h) {
       const total = Math.round((h % 24) * 60) % 1440;
@@ -1477,7 +1518,7 @@
     function computePalette() {
       const now = new Date();
       const realHour = now.getHours() + now.getMinutes() / 60;
-      const hh = (manualHour === null) ? realHour : manualHour;
+      const hh = mod24(realHour + timeOffsetHours);
       let a = SKY_KEYFRAMES[0], b = SKY_KEYFRAMES[1];
       for (let i = 0; i < SKY_KEYFRAMES.length - 1; i++) {
         if (hh >= SKY_KEYFRAMES[i].h && hh <= SKY_KEYFRAMES[i + 1].h) {
@@ -1495,14 +1536,14 @@
       });
 
       const minuteNow = now.getHours() * 60 + now.getMinutes();
-      const badgeText = `${getDayPhaseIcon(hh)} ${getDayPhaseName(hh)} ${hourToClock(hh)}${manualHour === null ? '' : ' · 手动'}`;
+      const badgeText = `${getDayPhaseIcon(hh)} ${getDayPhaseName(hh)} ${hourToClock(hh)}${timeOffsetHours === 0 ? '' : ' · 手动'}`;
       if (badgeText !== lastBadgeText) {
         lastBadgeText = badgeText;
         lastBadgeMinute = minuteNow;
         const badge = document.getElementById('timeBadge');
         if (badge) badge.innerText = badgeText;
         const timeNowEl = document.getElementById('timeNow');
-        if (timeNowEl) timeNowEl.innerText = manualHour === null ? '跟随现实' : hourToClock(hh);
+        if (timeNowEl) timeNowEl.innerText = timeOffsetHours === 0 ? '跟随现实' : formatOffset(timeOffsetHours);
       }
       return pal;
     }
@@ -1536,46 +1577,63 @@
       }
     }
 
-    // ===== 手动调节时间控件 =====
-    const timeSliderEl = document.getElementById('timeSlider');
+    // ===== 手动调节时间控件（一键前进 / 后退） =====
+    const timeNowEl = document.getElementById('timeNow');
     const btnFollowTimeEl = document.getElementById('btnFollowTime');
+    const timeStepBtns = Array.from(document.querySelectorAll('.btn-time'));
 
-    function syncTimeControls() {
-      if (!timeSliderEl || !btnFollowTimeEl) return;
-      if (manualHour === null) {
-        const now = new Date();
-        const h = now.getHours() + now.getMinutes() / 60;
-        timeSliderEl.value = String(Math.round(h * 4) / 4);
-        btnFollowTimeEl.classList.add('active');
-        btnFollowTimeEl.innerText = '跟随现实时间';
-      } else {
-        timeSliderEl.value = String(manualHour);
-        btnFollowTimeEl.classList.remove('active');
-        btnFollowTimeEl.innerText = '回到现实时间';
+    function saveTimeState() {
+      try {
+        localStorage.setItem('cat_time_offset', String(timeOffsetHours));
+        localStorage.setItem('cat_time_skip_total', String(timeSkipTotalHours));
+        localStorage.setItem('cat_time_skip_max', String(timeSkipMaxHours));
+      } catch (e) {}
+    }
+
+    function refreshTimeUI() {
+      if (timeNowEl) timeNowEl.innerText = formatOffset(timeOffsetHours);
+      if (btnFollowTimeEl) btnFollowTimeEl.classList.toggle('active', timeOffsetHours === 0);
+      lastBadgeText = '';
+      lastBadgeMinute = -1;
+    }
+
+    function applyTimeStep(step) {
+      if (!step) return;
+      timeOffsetHours += step;
+      const absStep = Math.abs(step);
+      timeSkipTotalHours += absStep;
+      if (absStep > timeSkipMaxHours) timeSkipMaxHours = absStep;
+      saveTimeState();
+      refreshTimeUI();
+      const pal = computePalette();
+      drawScene();
+      if (absStep >= 24) {
+        const dirWord = step > 0 ? '快进' : '倒回';
+        const days = absStep / 24;
+        showDialog(`（小猫眨了下眼，运河畔的日光就这样被${dirWord}了 ${days} 天……现在${getDayPhaseName(mod24(new Date().getHours() + new Date().getMinutes() / 60 + timeOffsetHours))}，${hourToClock(mod24(new Date().getHours() + new Date().getMinutes() / 60 + timeOffsetHours))}。）`, { dwell: 3200 });
       }
+      checkAchievements();
     }
 
-    if (timeSliderEl) {
-      timeSliderEl.addEventListener('input', () => {
-        manualHour = parseFloat(timeSliderEl.value);
-        if (isNaN(manualHour)) manualHour = null;
-        lastBadgeText = '';
-        lastBadgeMinute = -1;
-        syncTimeControls();
-        try { localStorage.setItem('cat_manual_hour', String(manualHour)); } catch (e) {}
+    timeStepBtns.forEach(btn => {
+      btn.addEventListener('click', (ev) => {
+        const base = parseFloat(btn.dataset.step);
+        if (isNaN(base)) return;
+        // 按住 Shift 再点，一次走十步（7天 × 10 = 70天）
+        applyTimeStep(ev.shiftKey ? base * 10 : base);
       });
-    }
+    });
+
     if (btnFollowTimeEl) {
       btnFollowTimeEl.addEventListener('click', () => {
-        manualHour = null;
-        lastBadgeText = '';
-        lastBadgeMinute = -1;
-        try { localStorage.removeItem('cat_manual_hour'); } catch (e) {}
-        syncTimeControls();
+        timeOffsetHours = 0;
+        saveTimeState();
+        refreshTimeUI();
+        drawScene();
       });
     }
-    syncTimeControls();
-    setInterval(() => { if (manualHour === null) syncTimeControls(); }, 60000);
+
+    refreshTimeUI();
 
     function drawScene() {
       const pal = computePalette();
@@ -2697,6 +2755,46 @@ dialog.addEventListener('click', () => {
         reward: '称号：不睡觉的小夜猫',
         check: () => nightWalkFlag,
         progress: () => `${nightWalkFlag ? 1 : 0}/1`
+      },
+      {
+        id: 'time_jump_3d',
+        icon: '⏳',
+        hidden: true,
+        name: '光阴似箭',
+        desc: '一次性把运河畔的时间往前拨过三天以上',
+        reward: '称号：拨动日晷的爪子',
+        check: () => timeSkipMaxHours >= 72,
+        progress: () => `${Math.min(Math.floor(timeSkipMaxHours / 24), 3)}/3天`
+      },
+      {
+        id: 'time_jump_30d',
+        icon: '🌗',
+        hidden: true,
+        name: '白驹过隙',
+        desc: '一次性跳过整整一个月的光阴',
+        reward: '称号：一步跨月的猫',
+        check: () => timeSkipMaxHours >= 720,
+        progress: () => `${Math.min(Math.floor(timeSkipMaxHours / 24), 30)}/30天`
+      },
+      {
+        id: 'time_jump_total_100d',
+        icon: '🕰',
+        hidden: true,
+        name: '沧海桑田',
+        desc: '累计手动拨过一百天的时光',
+        reward: '称号：与运河同岁的猫',
+        check: () => timeSkipTotalHours >= 2400,
+        progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 100)}/100天`
+      },
+      {
+        id: 'time_jump_year',
+        icon: '✨',
+        hidden: true,
+        name: '一眼万年',
+        desc: '累计拨过一整年的时光，运河依旧静静流着',
+        reward: '称号：时间的旁观者',
+        check: () => timeSkipTotalHours >= 8760,
+        progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 365)}/365天`
       }
     ];
 
@@ -2742,17 +2840,23 @@ dialog.addEventListener('click', () => {
       achievementsList.forEach(ach => {
         const isUnlocked = unlockedAchSet.has(ach.id) || ach.check();
         if (isUnlocked) completedCount++;
+        const veiled = ach.hidden && !isUnlocked;
+        const shownName = veiled ? '？？？' : ach.name;
+        const shownIcon = veiled ? '❔' : ach.icon;
+        const shownDesc = veiled ? '隐藏成就 · 用某种特别的方式拨动时间才会揭晓' : ach.desc;
+        const shownReward = veiled ? '？？？' : ach.reward;
+        const shownStatus = isUnlocked ? '已达成 ✓' : (veiled ? '？？？' : ach.progress());
 
         html += `
           <div class="achievement-card ${isUnlocked ? 'unlocked' : 'locked'}">
-            <div class="ach-icon">${ach.icon}</div>
+            <div class="ach-icon">${shownIcon}</div>
             <div class="ach-info">
               <div class="ach-name-row">
-                <span class="ach-name">${ach.name}</span>
-                <span class="ach-status ${isUnlocked ? 'done' : 'todo'}">${isUnlocked ? '已达成 ✓' : ach.progress()}</span>
+                <span class="ach-name">${shownName}</span>
+                <span class="ach-status ${isUnlocked ? 'done' : 'todo'}">${shownStatus}</span>
               </div>
-              <div class="ach-desc">${ach.desc}</div>
-              <div class="ach-reward">${ach.reward}</div>
+              <div class="ach-desc">${shownDesc}</div>
+              <div class="ach-reward">${shownReward}</div>
             </div>
           </div>
         `;
