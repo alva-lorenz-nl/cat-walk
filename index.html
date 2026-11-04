@@ -1485,6 +1485,12 @@
     let timeSkipMaxHours = 0;     // 单次跳过的最大值
     let timeBackTotalHours = 0;   // 累计往回拨的小时数
     let timeBackMinOffset = 0;    // 曾拨到过的最早偏移（负数）
+    const TIME_LIMIT_HOURS = 8760; // 手动调节的极限：正负各一年
+    let timeLimitWarned = false;   // 是否已经警告过（等待小猫收手）
+    let timeLimitWarnDir = 0;      // 警告时被推的方向
+    let timeLimitWarnAt = 0;       // 警告弹出的时刻
+    let timeLimitWarnDwell = 4200; // 警告对话的停留时长
+    let timeLimitLocked = false;   // 强制归零动画期间锁住操作
     try {
       const v = parseFloat(localStorage.getItem('cat_time_offset') || '0');
       if (!isNaN(v)) { timeOffsetHours = v; timeTargetHours = v; }
@@ -1497,6 +1503,8 @@
       const bm = parseFloat(localStorage.getItem('cat_time_back_min') || '0');
       if (!isNaN(bm)) timeBackMinOffset = bm;
       if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+      if (timeTargetHours > TIME_LIMIT_HOURS) { timeTargetHours = TIME_LIMIT_HOURS; timeOffsetHours = TIME_LIMIT_HOURS; }
+      if (timeTargetHours < -TIME_LIMIT_HOURS) { timeTargetHours = -TIME_LIMIT_HOURS; timeOffsetHours = -TIME_LIMIT_HOURS; }
     } catch (e) {}
 
     function mod24(h) {
@@ -1615,7 +1623,11 @@
     }
 
     function refreshTimeUI() {
-      if (timeNowEl) timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours));
+      if (timeNowEl) {
+        const atLimit = Math.abs(timeTargetHours) >= TIME_LIMIT_HOURS;
+        timeNowEl.innerText = formatOffset(Math.round(timeOffsetHours)) + (atLimit ? ' · 极限' : '');
+        timeNowEl.style.color = atLimit ? '#ff6b6b' : '';
+      }
       if (btnFollowTimeEl) btnFollowTimeEl.classList.toggle('active', timeTargetHours === 0 && !timeAnim);
       lastBadgeText = '';
       lastBadgeMinute = -1;
@@ -1645,19 +1657,35 @@
     }
 
     function applyTimeStep(step) {
-      if (!step) return;
-      const absStep = Math.abs(step);
-      timeSkipTotalHours += absStep;
-      if (absStep > timeSkipMaxHours) timeSkipMaxHours = absStep;
-      timeTargetHours += step;
-      if (step < 0) {
-        timeBackTotalHours += absStep;
-        if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+      if (!step || timeLimitLocked) return;
+      const dir = step > 0 ? 1 : -1;
+      const wanted = timeTargetHours + step;
+      const clamped = Math.max(-TIME_LIMIT_HOURS, Math.min(TIME_LIMIT_HOURS, wanted));
+      const absStep = Math.abs(clamped - timeTargetHours);
+
+      if (absStep > 0) {
+        timeSkipTotalHours += absStep;
+        if (absStep > timeSkipMaxHours) timeSkipMaxHours = absStep;
+        timeTargetHours = clamped;
+        if (dir < 0) {
+          timeBackTotalHours += absStep;
+          if (timeTargetHours < timeBackMinOffset) timeBackMinOffset = timeTargetHours;
+        }
+        if (timeLimitWarned && dir !== timeLimitWarnDir) {
+          timeLimitWarned = false;
+          timeLimitWarnDir = 0;
+        }
+        saveTimeState();
+        startTimeAnim();
+        refreshTimeUI();
+        checkAchievements();
       }
-      saveTimeState();
-      startTimeAnim();
-      refreshTimeUI();
-      checkAchievements();
+
+      // 顶到极限（或已经卡在极限上）
+      if (clamped !== wanted || Math.abs(timeTargetHours) >= TIME_LIMIT_HOURS) {
+        handleTimeLimit(dir);
+        return;
+      }
 
       if (absStep >= 24) {
         const dirWord = step > 0 ? '快进' : '倒回';
@@ -1669,6 +1697,43 @@
           showDialog(`（小猫眨了下眼，运河畔的日光就这样被${dirWord}了 ${days} 天……现在${getDayPhaseName(hh)}，${hourToClock(hh)}。）`, { dwell: 3400 });
         }, delay);
       }
+    }
+
+    // ---- 极限时间：警告 → 强制归零 ----
+    function handleTimeLimit(dir) {
+      alva.exclamationTimer = Math.max(alva.exclamationTimer, 300);
+      const now = performance.now();
+
+      if (timeLimitWarned && dir === timeLimitWarnDir) {
+        // 提示还挂在对话栏里，先按住爪子不动
+        if (now - timeLimitWarnAt < timeLimitWarnDwell + 900) return;
+        forceTimeReset();
+        return;
+      }
+
+      timeLimitWarned = true;
+      timeLimitWarnDir = dir;
+      timeLimitWarnAt = now;
+      timeLimitWarnDwell = 4200;
+      const text = dir > 0
+        ? "（阿尔瓦抬手按住了你拨向未来的爪子，眉头轻轻皱起：『小猫，够了。再往前拨，连我也不敢保证运河还在这儿。』）"
+        : "（阿尔瓦把掌心覆在你拨向过去的爪子上，声音低下来：『小猫，别再往回拨了。有些日子回去了，也找不回来。』）";
+      showDialog(text, { dwell: timeLimitWarnDwell });
+      refreshTimeUI();
+    }
+
+    function forceTimeReset() {
+      timeLimitLocked = true;
+      timeLimitWarned = false;
+      timeLimitWarnDir = 0;
+      stopPress();
+      alva.exclamationTimer = 80;
+      timeTargetHours = 0;
+      saveTimeState();
+      startTimeAnim();
+      refreshTimeUI();
+      showDialog("（阿尔瓦伸手把时针按回了原点，运河的水声重新落回此刻：『我说过的，小猫。时间不是玩具。』）", { dwell: 4400 });
+      setTimeout(() => { timeLimitLocked = false; refreshTimeUI(); }, (timeAnim ? timeAnim.dur : 0) + 800);
     }
 
     // ---- 长按连续拨动 ----
@@ -2128,7 +2193,8 @@
 
       // 头顶感叹号特效（发现赫尔曼倒下时）
       if (alva.exclamationTimer > 0) {
-        const ey = ay - 48 + breathe - Math.min(6, (50 - alva.exclamationTimer) * 0.8);
+        const age = Math.max(0, 50 - alva.exclamationTimer);
+        const ey = ay - 48 + breathe - Math.min(6, age * 0.8);
         // 感叹号气泡与像素符号：黄白明亮带黑描边
         px(ax - 2, ey - 9, 5, 1, '#1a1a1a');
         px(ax - 3, ey - 8, 7, 7, '#1a1a1a');
