@@ -1530,6 +1530,7 @@
       isBoss: false,
       bossType: 'normal', // 'normal' | 'gold' | 'diamond'
       reviveGlow: 0,
+      eatAnim: null, // 赫尔曼自己吃华夫饼的动画状态 {t, dur, type, bites}
       lastHitTime: Date.now(),
       healTimer: 0,
       healFlash: 0
@@ -2493,6 +2494,14 @@
             });
           }
 
+          // 赫尔曼接住华夫饼，自己一口口吃掉
+          bench.eatAnim = {
+            t: 0,
+            dur: isDiamondWaffle ? 58 : (isGoldWaffle ? 52 : 68),
+            type: flyingWaffle.waffleType,
+            bites: 0
+          };
+
           // 赫尔曼沐浴神光！触发复活圣光粒子
           bench.reviveGlow = isDiamondWaffle ? 75 : (isGoldWaffle ? 60 : 45);
           const rayCount = isDiamondWaffle ? 60 : (isGoldWaffle ? 48 : 28);
@@ -2524,7 +2533,7 @@
             bench.maxHp = 1000;
             bench.hp = 1000;
             bench.lastHitTime = Date.now();
-            showDialog("【💎 宇宙级神迹！5% 概率唤醒【钻石大BOSS·赫尔曼】！！💎】整条运河被折射出耀眼的冰蓝钻石极光！赫尔曼身披纯钻超导西装傲然起身（HP: 1000/1000）！『哼！莫氏硬度 10 的永恒科技结晶！小猫，这次看你怎么破防！』👑💎✨", { dwell: 7000 });
+            showDialog("【💎 宇宙级神迹！5% 概率唤醒【钻石大BOSS·赫尔曼】！！💎】整条运河被折射出耀眼的冰蓝钻石极光！赫尔曼捧着钻石华夫饼嘎吱嘎吱嚼完最后一口，才身披纯钻超导西装傲然起身（HP: 1000/1000）！『哼！莫氏硬度 10 的永恒科技结晶！小猫，这次看你怎么破防！』👑💎✨", { dwell: 7000 });
           } else if (isGoldWaffle) {
             // 触发 15% 黄金大BOSS 变身！
             bench.isBoss = true;
@@ -2532,7 +2541,7 @@
             bench.maxHp = 500;
             bench.hp = 500;
             bench.lastHitTime = Date.now();
-            showDialog("【🌟 奇迹降临！15% 概率触发黄金华夫饼！！🌟】纯金焦糖能量直冲云霄！赫尔曼浑身金光暴涨，华丽变身【黄金大BOSS·赫尔曼】（HP: 500/500）！『哈哈哈哈！感受永动轮纯金的无上威能吧，小猫！』👑✨", { dwell: 6000 });
+            showDialog("【🌟 奇迹降临！15% 概率触发黄金华夫饼！！🌟】纯金焦糖能量直冲云霄！赫尔曼三口吞掉金箔华夫饼，浑身金光暴涨，华丽变身【黄金大BOSS·赫尔曼】（HP: 500/500）！『哈哈哈哈！感受永动轮纯金的无上威能吧，小猫！』👑✨", { dwell: 6000 });
           } else {
             // 普通华夫饼吃饼复活
             bench.isBoss = false;
@@ -2540,9 +2549,40 @@
             bench.maxHp = 100;
             bench.hp = 100;
             bench.lastHitTime = Date.now();
-            showDialog("【金光璀璨！✨】焦糖华夫饼注入灵魂！赫尔曼周身沐浴在复活圣光中，整整齐齐地坐直了身子：『咳……看在焦糖华夫饼的分上，这次就算了！』💗 (血条已充满)");
+            showDialog("【金光璀璨！✨】焦糖华夫饼精准落进赫尔曼手里！他顾不得体面，举到嘴边一口口嚼得香甜，饼屑簌簌往下掉，就这么边吃边坐直了身子：『咳……看在焦糖华夫饼的分上，这次就算了！』💗 (血条已充满)");
           }
         }
+      }
+
+      // --- 赫尔曼吃华夫饼：逐口推进、掉落饼屑 ---
+      if (bench.eatAnim) {
+        const ea = bench.eatAnim;
+        ea.t++;
+        const et = ea.t / ea.dur;
+        const biteMarks = [0.22, 0.45, 0.66, 0.86];
+        while (ea.bites < biteMarks.length && et >= biteMarks[ea.bites]) {
+          ea.bites++;
+          const crumbN = ea.type === 'diamond' ? 9 : (ea.type === 'gold' ? 7 : 5);
+          for (let i = 0; i < crumbN; i++) {
+            let biteColor;
+            if (ea.type === 'diamond') {
+              biteColor = ['#ffffff', '#e6f7ff', '#bae7ff'][Math.floor(Math.random() * 3)];
+            } else if (ea.type === 'gold') {
+              biteColor = ['#ffd700', '#fffb8f', '#ffffff'][Math.floor(Math.random() * 3)];
+            } else {
+              biteColor = Math.random() > 0.4 ? '#f3af4a' : '#fff2a8';
+            }
+            waffleCrumbs.push({
+              x: bench.x + 19 + (Math.random() - 0.5) * 4,
+              y: bench.y - 7 + (Math.random() - 0.5) * 3,
+              vx: (Math.random() - 0.5) * 2.2,
+              vy: -Math.random() * 1.4,
+              life: 12 + Math.floor(Math.random() * 8),
+              color: biteColor
+            });
+          }
+        }
+        if (ea.t >= ea.dur) bench.eatAnim = null;
       }
 
       // 渲染华夫饼碎屑与复活圣光粒子
@@ -2825,16 +2865,57 @@ function drawPixelHerman(hx, hy) {
         px(hx, hy - 3, 1, 1, tiePin);
         px(hx, hy - 1, 1, 1, isDiamond ? '#ffffff' : '#f5d13d');
 
-        // 5. 手臂与手持报纸/手稿
+        // 5. 手臂与手持报纸/手稿（正在吃华夫饼时改成举饼送到嘴边）
         px(hx - 8, hy - 3, 2, 8, suitMain);
         px(hx - 7, hy + 4, 2, 2, '#f4cfb2');
-        px(hx + 5, hy - 3, 2, 6, suitMain);
-        px(hx + 5, hy + 3, 2, 2, '#f4cfb2');
-        // 手里拿着的学术早报 / 钻石光芒手稿
-        px(hx + 4, hy + 1, 6, 8, paperBg);
-        px(hx + 5, hy + 2, 4, 1, paperLine);
-        px(hx + 5, hy + 4, 4, 1, paperLine);
-        px(hx + 5, hy + 6, 4, 1, paperLine);
+
+        const eating = bench.eatAnim;
+        if (eating) {
+          const et = Math.min(1, eating.t / eating.dur);
+          const chewUp = Math.floor(eating.t / 5) % 2 === 0;
+          // 抬起的右臂：肘弯向上，手掌托着华夫饼
+          px(hx + 5, hy - 2, 2, 6, suitMain);
+          px(hx + 4, hy - 5, 2, 3, suitMain);
+          px(hx + 3, hy - 6, 2, 2, '#f4cfb2');
+          // 华夫饼随着咬动一口口变小
+          let wSize = 0;
+          if (et < 0.22) wSize = 4;
+          else if (et < 0.45) wSize = 4;
+          else if (et < 0.66) wSize = 3;
+          else if (et < 0.86) wSize = 2;
+          if (wSize > 0) {
+            const wx0 = hx + (wSize === 4 ? 0 : 1);
+            const wy0 = hy - 8 + (wSize === 4 ? 0 : (wSize === 3 ? 0 : 1)) + (chewUp ? 0 : 1);
+            if (eating.type === 'diamond') {
+              px(wx0, wy0, wSize, wSize, '#40a9ff');
+              if (wSize >= 3) px(wx0 + 1, wy0 + 1, wSize - 2, wSize - 2, '#e6f7ff');
+            } else if (eating.type === 'gold') {
+              px(wx0, wy0, wSize, wSize, '#d48806');
+              if (wSize >= 3) px(wx0 + 1, wy0 + 1, wSize - 2, wSize - 2, '#ffd700');
+            } else {
+              px(wx0, wy0, wSize, wSize, '#b86b24');
+              if (wSize >= 3) {
+                px(wx0 + 1, wy0 + 1, wSize - 2, wSize - 2, '#f3af4a');
+                px(wx0 + 1, wy0 + 1, 1, 1, '#fff2a8');
+              } else {
+                px(wx0, wy0, wSize, wSize, '#f3af4a');
+              }
+            }
+          }
+          // 咀嚼时腮帮子轻轻鼓起
+          if (chewUp) px(hx - 2, hy - 8, 1, 2, '#f2ceb6');
+          // 头顶飘起的满足小星星
+          const eatSpark = (eating.t % 24) < 12;
+          px(hx + 7, hy - 12 - (eating.t % 6) * 0.4, 1, 1, eatSpark ? '#ffe58f' : '#fff8cc');
+        } else {
+          px(hx + 5, hy - 3, 2, 6, suitMain);
+          px(hx + 5, hy + 3, 2, 2, '#f4cfb2');
+          // 手里拿着的学术早报 / 钻石光芒手稿
+          px(hx + 4, hy + 1, 6, 8, paperBg);
+          px(hx + 5, hy + 2, 4, 1, paperLine);
+          px(hx + 5, hy + 4, 4, 1, paperLine);
+          px(hx + 5, hy + 6, 4, 1, paperLine);
+        }
 
         // 6. 脖颈与下颌阴影
         px(hx - 1, hy - 5, 2, 2, '#f2ceb6');
