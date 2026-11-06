@@ -5543,7 +5543,7 @@ let catAction = 'idle';
         check: () => driedFish >= 1500,
         progress: () => `${Math.min(driedFish, 1500)}/1500`
       },
-      // ===== 🐾 赫尔曼挨挠层层递进四档位（严苛进阶） =====
+      // ===== 🐾 赫尔曼挨挠层层递进六档位（严苛进阶 + 520/1314浪漫彩蛋） =====
       {
         id: 'hit_herman_100',
         icon: '🍪',
@@ -5563,6 +5563,16 @@ let catAction = 'idle';
         progress: () => `${Math.min(hermanHitTotal, 350)}/350爪`
       },
       {
+        id: 'hit_herman_520',
+        icon: '💌',
+        hidden: true,
+        name: '五百二十记猫猫拳',
+        desc: '累计挠中赫尔曼 520 爪——他叹着气把被抓乱的袖口叠好，眼底却藏着连自己都没察觉的纵容',
+        reward: '称号：嘴硬心软的偏爱',
+        check: () => hermanHitTotal >= 520,
+        progress: () => `${Math.min(hermanHitTotal, 520)}/520爪`
+      },
+      {
         id: 'hit_herman_800',
         icon: '🔔',
         name: '巴普洛夫的认命',
@@ -5570,6 +5580,16 @@ let catAction = 'idle';
         reward: '称号：赫尔曼先生的习惯性妥协',
         check: () => hermanHitTotal >= 800,
         progress: () => `${Math.min(hermanHitTotal, 800)}/800爪`
+      },
+      {
+        id: 'hit_herman_1314',
+        icon: '💍',
+        hidden: true,
+        name: '一生一世的猫抓板',
+        desc: '累计挠中赫尔曼 1314 爪——从莱顿长椅到往后余生，他和阿尔瓦身边永远有你的一席之地',
+        reward: '专属纪念：永不褪色的旧时光',
+        check: () => hermanHitTotal >= 1314,
+        progress: () => `${Math.min(hermanHitTotal, 1314)}/1314爪`
       },
       {
         id: 'hit_herman_2000',
