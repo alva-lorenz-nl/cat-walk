@@ -81,10 +81,34 @@
       background: #251c17;
     }
 
-    /* 音效开关：挂在手帐按钮下方 */
-    .btn-sound-toggle {
+    /* 🐟 小鱼干余额徽章 */
+    .fish-badge {
       position: fixed;
       top: 52px;
+      right: 14px;
+      z-index: 100;
+      padding: 5px 12px;
+      background: rgba(32, 25, 21, 0.88);
+      border: 1.5px solid #6b5745;
+      border-radius: 18px;
+      color: #eed6b1;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(5px);
+      pointer-events: none;
+      transition: transform 0.15s ease, color 0.15s ease;
+    }
+    .fish-badge.pop {
+      transform: scale(1.12);
+      color: #ffe6a8;
+    }
+
+    /* 音效开关：挂在小鱼干徽章下方 */
+    .btn-sound-toggle {
+      position: fixed;
+      top: 88px;
       right: 14px;
       z-index: 100;
       display: inline-flex;
@@ -191,13 +215,13 @@
     }
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(5, 1fr);
       gap: 6px;
       margin-bottom: 12px;
     }
-    @media (max-width: 360px) {
+    @media (max-width: 440px) {
       .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
       }
     }
     .stats-box {
@@ -859,11 +883,13 @@
     /* 手机端：把底部两组按键重排成好按的网格，时间条变成「左退 | 读数 | 右进」三栏 */
     @media (max-width: 620px), (orientation: portrait) {
       .controls {
+        position: relative;
+        bottom: auto;
+        margin-top: 10px;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 6px;
+        gap: 7px;
         width: min(96vw, 460px);
-        bottom: calc(8px + env(safe-area-inset-bottom, 0px));
       }
       .controls .btn {
         min-height: 42px;
@@ -874,33 +900,35 @@
       .time-controls {
         display: grid;
         grid-template-columns: auto minmax(86px, 1fr) auto;
-        gap: 7px 5px;
+        gap: 6px 5px;
         width: min(96vw, 460px);
-        padding: 8px 10px;
+        margin-top: 8px;
+        padding: 7px 10px;
       }
       .time-back { justify-content: flex-end; }
       .time-fwd { justify-content: flex-start; }
       .time-now { justify-self: center; font-size: 13px; }
-      .time-controls .btn-time { min-height: 32px; padding: 5px 9px; font-size: 12px; }
+      .time-controls .btn-time { min-height: 30px; padding: 4px 8px; font-size: 11.5px; }
       .btn-follow {
         grid-column: 1 / -1;
         justify-self: center;
-        padding: 7px 18px;
-        font-size: 12px;
+        padding: 5px 16px;
+        font-size: 11.5px;
       }
       .time-controls .time-hint {
-        grid-column: 1 / -1;
-        text-align: center;
-        font-size: 9px;
-        line-height: 1.5;
+        display: none;
       }
+      /* 手机竖屏：成就解锁弹窗紧凑悬浮在顶部，不压画布 */
       .ach-toast-layer {
-        left: 8px;
-        right: 8px;
-        bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+        top: calc(8px + env(safe-area-inset-top, 0px));
+        bottom: auto;
+        left: 10px;
+        right: 10px;
+        flex-direction: column;
         align-items: stretch;
       }
-      .ach-toast { width: 100%; }
+      .ach-toast { width: 100%; padding: 8px 12px; }
+      .tips { display: none; }
     }
     .time-badge {
       position: absolute;
@@ -908,88 +936,218 @@
       left: 6px;
       padding: 2px 7px;
       border-radius: 8px;
-      background: rgba(12, 10, 18, 0.5);
+      background: rgba(12, 10, 18, 0.58);
+      border: 1px solid rgba(255, 236, 200, 0.18);
       color: #f3e6cf;
       font-size: 10px;
       letter-spacing: 0.5px;
       font-family: -apple-system, monospace;
-      pointer-events: none;
-      z-index: 5;
+      cursor: pointer;
+      user-select: none;
+      z-index: 25;
+      transition: background 0.15s, border-color 0.15s;
     }
-    .dialog-box {
+    .time-badge:hover {
+      background: rgba(42, 33, 27, 0.85);
+      border-color: #c9a227;
+    }
+    /* 画面上只浮出最新一条消息 */
+    .toast {
       position: absolute;
-      top: 14px;
-      width: calc(100% - 32px);
-      max-width: 580px;
-      max-height: 46%;
-      overflow-y: auto;
-      overflow-x: hidden;
-      background: rgba(22, 19, 21, 0.86);
-      border: 2px solid #6b5c4f;
-      border-radius: 8px;
-      padding: 8px 12px;
+      left: 50%;
+      bottom: 12px;
+      max-width: calc(100% - 24px);
+      padding: 6px 11px;
+      background: rgba(22, 19, 21, 0.82);
+      border-left: 2px solid #c9a227;
+      border-radius: 6px;
       font-size: 12.5px;
-      line-height: 1.5;
-      color: #ede2d3;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.7);
-      backdrop-filter: blur(4px);
+      line-height: 1.45;
+      color: #fff6e2;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+      backdrop-filter: blur(3px);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(-50%) translateY(8px);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
       z-index: 20;
       box-sizing: border-box;
-      cursor: pointer;
-      scrollbar-width: thin;
-      scrollbar-color: #6b5c4f transparent;
-      -webkit-mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 100%);
-      mask-image: linear-gradient(to bottom, transparent 0, #000 14px, #000 100%);
     }
-    .dialog-box::-webkit-scrollbar { width: 4px; }
-    .dialog-box::-webkit-scrollbar-thumb { background: #6b5c4f; border-radius: 2px; }
-    .log-entry {
-      margin: 0 0 6px;
-      padding: 3px 8px 3px 9px;
-      border-left: 2px solid #6b5c4f;
-      border-radius: 3px;
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+    /* 侧边日志面板 */
+    .play-area {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+    }
+    .log-panel {
+      width: 232px;
+      flex: 0 0 232px;
+      display: flex;
+      flex-direction: column;
+      background: rgba(18, 16, 18, 0.92);
+      border: 2px solid #4a3f36;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    .log-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 3px 8px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      color: #c9a227;
+      border-bottom: 1px solid #3a322b;
       background: rgba(255,255,255,0.03);
-      animation: logIn 0.45s ease both;
-      transition: opacity 1.2s ease;
+      flex: 0 0 auto;
     }
-    .log-entry:last-child {
-      border-left-color: #c9a227;
-      background: rgba(201,162,39,0.10);
+    .log-clear {
+      background: none;
+      border: 1px solid #4a3f36;
+      border-radius: 4px;
+      color: #9c8d7d;
+      font-size: 10px;
+      padding: 1px 5px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .log-clear:hover { color: #e6d6bd; border-color: #6b5c4f; }
+    .log-list {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 6px 8px 8px;
+      font-size: 11.5px;
+      line-height: 1.45;
+      scrollbar-width: thin;
+      scrollbar-color: #4a3f36 transparent;
+    }
+    .log-list::-webkit-scrollbar { width: 4px; }
+    .log-list::-webkit-scrollbar-thumb { background: #4a3f36; border-radius: 2px; }
+    .log-day {
+      color: #7fa6cc;
+      font-size: 10.5px;
+      margin: 6px 0 3px;
+      padding-bottom: 2px;
+      border-bottom: 1px dashed #322c26;
+    }
+    .log-line {
+      position: relative;
+      padding-left: 11px;
+      margin-bottom: 3px;
+      color: #b9ac9d;
+      word-break: break-word;
+    }
+    .log-line::before {
+      content: '·';
+      position: absolute;
+      left: 2px;
+      top: 0;
+      color: #6b5c4f;
+    }
+    .log-line.new {
       color: #fff6e2;
+      animation: logIn 0.45s ease both;
     }
-    .log-entry.fading { opacity: 0; }
+    .log-line.new::before { color: #c9a227; }
     @keyframes logIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateX(6px); }
+      to { opacity: 1; transform: translateX(0); }
     }
-    /* 竖屏移动端适配：将文字对话框固定在画面上方外部，彻底不遮挡游戏画面 */
+    /* 竖屏移动端适配：顶部紧凑排布，台词气泡抬高至夜空处，绝不遮挡小猫与长椅 */
     @media (orientation: portrait), (max-aspect-ratio: 1/1) {
+      body {
+        justify-content: flex-start;
+        padding: calc(48px + env(safe-area-inset-top, 0px)) 10px calc(14px + env(safe-area-inset-bottom, 0px));
+        overflow-y: auto;
+      }
+      .btn-stats-trigger {
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 10px;
+        right: auto;
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+      .fish-badge {
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        left: 50%;
+        right: auto;
+        transform: translateX(-50%);
+        padding: 5px 11px;
+        font-size: 11px;
+        white-space: nowrap;
+      }
+      .fish-badge.pop {
+        transform: translateX(-50%) scale(1.12);
+      }
+      .btn-sound-toggle {
+        top: calc(10px + env(safe-area-inset-top, 0px));
+        right: 10px;
+        padding: 5px 10px;
+        font-size: 11px;
+      }
       .header {
         position: relative;
         top: 0;
-        margin-bottom: 8px;
+        margin: 4px 0 8px;
       }
+      .title { font-size: 16px; }
+      .subtitle { font-size: 10.5px; margin-top: 3px; }
       .game-wrapper {
-        margin-top: 10px;
-      }
-      .dialog-box {
-        top: auto;
-        bottom: calc(100% + 10px);
+        margin-top: 2px;
         width: 100%;
-        max-width: 100%;
-        max-height: 28vh;
-        padding: 10px 14px;
-        font-size: 13px;
-        line-height: 1.6;
-        border-radius: 10px;
-        background: rgba(22, 18, 20, 0.94);
-        border: 2px solid #7d6b5b;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.85);
       }
-      .dialog-box.pos-bottom {
-        top: calc(100% + 12px);
+      .play-area {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+      }
+      /* 台词气泡抬高到画布上方天空区（时间徽标正下方），不挡底下的小猫、阿尔瓦与赫尔曼 */
+      .toast {
+        top: 28px;
         bottom: auto;
+        width: calc(100% - 16px);
+        max-width: calc(100% - 16px);
+        padding: 5px 10px;
+        font-size: 11.5px;
+        line-height: 1.4;
+        background: rgba(18, 15, 18, 0.78);
+        transform: translateX(-50%) translateY(-6px);
       }
+      .toast.show {
+        transform: translateX(-50%) translateY(0);
+      }
+      .log-panel {
+        width: min(96vw, 460px);
+        flex: 0 0 auto;
+        height: 116px;
+        max-height: 18vh;
+      }
+      .log-list {
+        max-height: 18vh;
+      }
+      .controls {
+        position: relative !important;
+        bottom: auto !important;
+        margin-top: 10px;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 7px;
+        width: min(96vw, 460px);
+      }
+      .tips { display: none !important; }
     }
     .controls {
       position: absolute;
@@ -1190,6 +1348,9 @@
     📜 手帐 · 换装
   </button>
 
+  <!-- 小鱼干余额，攒着以后买点心 -->
+  <div class="fish-badge" id="fishBadge" title="小猫的小鱼干余额">🐟 小鱼干 <span id="fishCount">0</span></div>
+
   <button class="btn-sound-toggle" id="btnSoundToggle" title="开关音效 (快捷键 S)">🔊 音效</button>
 
   <!-- 弹出式战绩看板模态框 -->
@@ -1232,6 +1393,11 @@
               <div class="stats-box-icon">💎✨</div>
               <div class="stats-box-num" id="modalStatDiamond">0</div>
               <div class="stats-box-label">钻石赫尔曼</div>
+            </div>
+            <div class="stats-box">
+              <div class="stats-box-icon">🐟</div>
+              <div class="stats-box-num" id="modalStatFish">0</div>
+              <div class="stats-box-label">小鱼干余额</div>
             </div>
           </div>
           <!-- 荣耀成就列表 -->
@@ -1295,20 +1461,29 @@
   </div>
 
   <div class="game-wrapper" id="gameWrapper">
-    <div class="canvas-container">
-      <canvas id="gameCanvas" width="320" height="180"></canvas>
-      <div class="time-badge" id="timeBadge">🌆 黄昏</div>
+    <div class="play-area">
+      <div class="canvas-container">
+        <canvas id="gameCanvas" width="320" height="180"></canvas>
+        <div class="time-badge" id="timeBadge" title="点一下跳到下一季 (+90天)，右键回到现实">🌆 黄昏</div>
+        <div class="toast" id="toast"></div>
+      </div>
+      <div class="log-panel">
+        <div class="log-head">
+          <span>日志</span>
+          <button class="log-clear" id="logClear">清空</button>
+        </div>
+        <div class="log-list" id="logList"></div>
+      </div>
     </div>
-    <div class="dialog-box" id="dialog" title="点击可切换上方/下方"></div>
   </div>
 
   <div class="controls">
     <button class="btn" id="btnLeft">◀ 往左走</button>
-    <button class="btn btn-meow" id="btnMeow">💬 喵喵叫</button>
     <button class="btn" id="btnAction">🌿 探头看看</button>
+    <button class="btn" id="btnRight">往右走 ▶</button>
+    <button class="btn btn-meow" id="btnMeow">💬 喵喵叫</button>
     <button class="btn btn-scratch" id="btnScratch">🐾 挠他！</button>
     <button class="btn btn-vent" id="btnVent">💢 发泄模式</button>
-    <button class="btn" id="btnRight">往右走 ▶</button>
   </div>
 
   <div class="time-controls">
@@ -1540,19 +1715,25 @@
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
-    const dialog = document.getElementById('dialog');
+    const toastEl = document.getElementById('toast');
+    const logList = document.getElementById('logList');
+
+    // 版本号：发版时同步更新 CHANGELOG.md
+    const APP_VERSION = '2.2.0';
 
     ctx.imageSmoothingEnabled = false;
 
     function resizeCanvas() {
-      const maxW = Math.min(window.innerWidth - 20, 640);
-      const scale = maxW / 320;
-      const w = Math.floor(320 * scale);
-      const h = Math.floor(180 * scale);
+      // 横屏宽屏时给右侧日志面板留出 242px，竖屏窄屏填满可用宽度且消除黑边
+      const wide = window.innerWidth >= 760 && window.innerWidth > window.innerHeight;
+      const reserve = wide ? 242 : 0;
+      const maxW = Math.max(200, Math.min(window.innerWidth - 20 - reserve, 640));
+      const w = Math.round(maxW);
+      const h = Math.round(w * 180 / 320);
       canvas.style.width = w + 'px';
       canvas.style.height = h + 'px';
       const gw = document.getElementById('gameWrapper');
-      if (gw) gw.style.width = w + 'px';
+      if (gw) gw.style.width = '';
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -1848,7 +2029,7 @@
     const ventEnterLines = [
       '【💢 发泄模式·启动】赫尔曼头顶的血条被一只看不见的手轻轻抹掉了。他抬起头，沉默了三秒：『……那个血条呢？』『拆了。』',
       '【💢 发泄模式·启动】血条消失的一瞬间，长椅上的赫尔曼慢慢坐直了身子：『阿尔瓦，你是不是把什么不该关的东西关掉了。』',
-      '【💢 发泄模式·启动】没有血条，没有终点，也没有人会倒下。只有一只小猫和一位终于闭上嘴的教授。'
+      '【💢 发泄模式·启动】没有血条，没有终点，也没有人会倒下。只有一只小猫和一位终于闭上嘴的优等生。'
     ];
     const ventExitLines = [
       '【发泄模式·结束】赫尔曼长长地呼出一口气，摸了摸自己被挠乱的头发：『……总算记起我还是个人了。』',
@@ -2140,12 +2321,100 @@
       return line;
     }
 
+    // 探头看看·赫尔曼被击倒档位台词（研讨课/实验报告版）
+    const hermanPeekTiers = [
+      {
+        min: 3,
+        lines: [
+          "赫尔曼把研究手稿横在胸前当盾牌，眼神盯着你的爪子：『……小猫，今天天气不错，咱们就别动手了，好不好？』",
+          "赫尔曼下意识往长椅另一头挪了挪，绿宝石领巾系得格外紧：『你、你探头干什么？我警告你，我今天换了新马甲。』",
+          "赫尔曼偷偷把华夫饼往你面前推了推，声音放软：『拿着，先吃。吃饱了爪子就没力气了……对吧？』",
+          "赫尔曼摸了摸袖口被抓出来的线头，小声嘀咕：『阿尔瓦怎么又带你出来……他是不是故意看我笑话。』"
+        ]
+      },
+      {
+        min: 15,
+        lines: [
+          "赫尔曼见你探头，先把袖子往上捋了捋，语气疲惫：『来吧。要挠就快些，我下午还有一节研讨课。』",
+          "赫尔曼把手稿合上压在腿下，认真地看着你：『小猫，我们谈谈。你需要什么——华夫饼？还是那条旧领巾？』",
+          "赫尔曼抬手挡了一下，又慢慢放下：『……算了。你今天轻点，我明天要交实验报告。』",
+          "赫尔曼从马甲内袋摸出备用的小手帕：『这周第三件马甲了。阿尔瓦说你只是喜欢我，我姑且信一次。』"
+        ]
+      },
+      {
+        min: 40,
+        lines: [
+          "赫尔曼拍了拍长椅上的空位，甚至把报纸挪开些：『坐吧。风这么大，你想挠哪儿，我伸给你。』",
+          "赫尔曼见你探头，先递过来半块华夫饼：『按老规矩，先吃后挠。今天别抓脸，别的地方随你。』",
+          "赫尔曼把手稿翻到新的一页，头也不抬：『等我写完这行……好了，来吧。』",
+          "赫尔曼朝阿尔瓦那边扬声：『阿尔瓦，你的猫又来了。今天的份我先付，钱从你酒钱里扣。』"
+        ]
+      }
+    ];
+
+    // 探头看看·阿尔瓦纵容档位台词
+    const alvaPeekTiers = [
+      {
+        min: 5,
+        lines: [
+          "阿尔瓦蹲下来，指尖轻轻挠着你的下巴：『你今天又去招惹他了？……他嘴上凶，其实每次都给你留着华夫饼。』",
+          "阿尔瓦抬眼看了看长椅那边，语气里有点无奈：『赫尔曼现在一见你就往旁边挪。你是不是该收敛一点了？』",
+          "阿尔瓦把你抱起来掂了掂，叹了口气又笑了：『唉，我夹在你们俩中间，两边都劝不动。』"
+        ]
+      },
+      {
+        min: 20,
+        lines: [
+          "阿尔瓦压低声音，从外套内袋摸出一块小鱼干：『嘘……趁他没看，快吃。』（他朝长椅那边飞快看了一眼，眼里全是笑意。）",
+          "阿尔瓦替你把爪子上沾的线头拈掉：『下次挠完记得回来，别让他在背后说我管教不力。』",
+          "阿尔瓦望着那件只剩三颗纽扣的马甲，沉默了一会儿：『……我明天给他买件新的。你别再抓了，真的。』（说完自己先笑了。）"
+        ]
+      },
+      {
+        min: 50,
+        lines: [
+          "阿尔瓦半蹲着，声音很轻：『赫尔曼昨晚跟我说，要是你哪天没来，他反倒觉得少了点什么。』",
+          "阿尔瓦把长围巾分一半盖在你身上，笑意很淡：『你们俩这样，我倒是省心了——反正他现在也不敢冲我发脾气。』",
+          "阿尔瓦望了一眼长椅上已经认命的赫尔曼，小声说：『这出戏我看了一个月，还没看腻。去吧，我在这儿看着。』"
+        ]
+      }
+    ];
+
+    // 被挠时的固定害怕求饶台词（答辩版）
+    const hermanScratchFixed = [
+      "赫尔曼一边挡一边往后退，声音都有点发颤：『又、又来？！阿尔瓦！你管管它！这已经是今天第几次了！』",
+      "赫尔曼抱着手稿缩到长椅角落，白手帕攥在手里：『别挠脸……别挠脸，我下周还要答辩……』",
+      "赫尔曼按住被抓开的袖口，清了清嗓子：『咳……小猫，我刚才叫你小畜生，是我失言。你是一只很有天赋的小猫，行了吧？』",
+      "赫尔曼别过脸，声音低了半度：『……之前说你爪子没劲，是我眼拙。这份量，够写进实验报告了。』"
+    ];
+    let scratchHitCount = 0;
+
+    function pickAlvaIdleLine() {
+      let tier = null;
+      for (let i = 0; i < alvaPeekTiers.length; i++) {
+        if (totalKoCount >= alvaPeekTiers[i].min) tier = alvaPeekTiers[i];
+      }
+      if (tier && Math.random() < 0.55) {
+        return pickFromBag('alvaPeek_' + tier.min, tier.lines);
+      }
+      const line = alvaDialogues[alvaDialogIndex % alvaDialogues.length];
+      alvaDialogIndex++;
+      return line;
+    }
+
     function pickHermanIdleLine() {
       // 先补看那些被挠过去、没听全的话
       if (hermanPendingLines.length > 0) {
         const pending = hermanPendingLines.shift();
         try { localStorage.setItem('cat_herman_pending_lines', JSON.stringify(hermanPendingLines)); } catch (e) {}
         return pending;
+      }
+      let koTier = null;
+      for (let i = 0; i < hermanPeekTiers.length; i++) {
+        if (totalKoCount >= hermanPeekTiers[i].min) koTier = hermanPeekTiers[i];
+      }
+      if (koTier && Math.random() < 0.55) {
+        return pickFromBag('hermanPeek_' + koTier.min, koTier.lines);
       }
       const s = hermanStage();
       if (s > 0 && hermanIdleByStage[s]) {
@@ -2155,6 +2424,10 @@
     }
 
     function pickHermanScratchLine() {
+      scratchHitCount++;
+      if (hermanHitTotal >= 6 && scratchHitCount % 3 === 0) {
+        return pickFromBag('scratchFixed', hermanScratchFixed);
+      }
       const s = hermanStage();
       if (s > 0 && hermanScratchByStage[s]) {
         return pickFromBag('scratch' + s, hermanScratchByStage[s]);
@@ -2184,7 +2457,7 @@
 
     // 击倒台词池
     const koDialogues = [
-      "他无力地挥着白手帕：『……阿尔瓦，今晚永动轮的代码你自己调去吧，我休假了……』",
+      "他无力地挥着白手帕：『……阿尔瓦，今晚阁楼实验室的代码你自己调吧，我先回去了……』",
       "他趴在长椅上，声音闷闷的：『别挠了……我认输。这周的会议记录我都帮你写完，行了吧？』",
       "他从口袋里摸出皱巴巴的白手帕举过头顶：『我投降。麻烦转告阿尔瓦，他的猫需要做个体检——检查一下是不是装了小马达。』",
       "他仰面瘫着，望着运河的天空喃喃：『二十年了……我居然打不过一只猫。这件事谁都不许写进年鉴。』",
@@ -2211,7 +2484,7 @@
     // 猫咪台词
     const catMeows = [
       "喵呜~（尾巴得意地翘了起来）",
-      "赫尔曼的马甲看起来特别好磨爪子！",
+      "喵呜——（盯着那件深红马甲，爪子不自觉地伸了伸）",
       "呼噜呼噜……（惬意地踩了踩落叶）",
       "喵！要吃刚出炉的南瓜华夫饼~",
       "赫尔曼又在皱眉头了，喵呜！",
@@ -2656,6 +2929,23 @@
       });
     }
 
+    const timeBadgeEl = document.getElementById('timeBadge');
+    if (timeBadgeEl) {
+      timeBadgeEl.addEventListener('click', () => {
+        applyTimeStep(90 * 24);
+      });
+      timeBadgeEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (timeTargetHours !== 0) {
+          timeTargetHours = 0;
+          saveTimeState();
+          startTimeAnim();
+          refreshTimeUI();
+          showDialog('（运河畔的光影轻轻一晃，回到了现实此刻。）');
+        }
+      });
+    }
+
     refreshTimeUI();
 
     // ===== 季节系统 =====
@@ -2671,7 +2961,7 @@
       summer: { name: '夏', icon: '☀️', phases: ['初夏', '仲夏', '夏末'] },
       autumn: { name: '秋', icon: '🍂', phases: ['初秋', '仲秋', '秋末'] }
     };
-    const WINTER_SNOW = [0.34, 0.72, 1.0];
+    const WINTER_SNOW = [0.32, 0.95, 0.56]; // 初冬薄雪 / 仲冬大雪封岸 / 冬末半融积雪
 
     function seasonInfo() {
       const g = new Date(Date.now() + timeOffsetHours * 3600000);
@@ -2770,12 +3060,20 @@
         return;
       }
       const lines = {
-        autumn: '运河边的梧桐开始落叶子了。阿尔瓦低头看你：『莱顿的秋天总是很短，趁它还在，多走几趟吧。』',
-        winter: '石阶上积了一层雪，路灯亮得比往常早。阿尔瓦拢了拢外套：『脚下滑，走慢一点，我在这儿等着。』',
-        spring: '岸边的郁金香开了，风里有股湿土的味道。阿尔瓦眯起眼睛：『春天来了啊……去年这个时候，我还在改那份报告。』',
-        summer: '阳光把石阶晒得发烫，蝉声一直没停。阿尔瓦递过来一小杯冰水：『别在太阳底下待太久，会中暑的。』'
+        'spring|0': '石阶背阴的地方还压着没化干净的雪，缝里却已经钻出第一茬嫩草。阿尔瓦蹲下来看了看：『雪还没走，春天倒是先来了……莱顿每年都这样。』',
+        'spring|1': '满树的花都开了，风一过就落下一阵粉白的花雨。阿尔瓦伸手接住一片：『趁这几天多走走吧，花期短得很，一晃就没了。』',
+        'spring|2': '花落尽了，枝头换成一层新绿，风里有了青草味。阿尔瓦眯起眼睛：『再暖一点，运河上的船就要多起来了。』',
+        'summer|0': '石阶被晒得发亮，草丛里冒出成片小白花。阿尔瓦把外套搭在手臂上：『初夏还算是讲道理的天气。』',
+        'summer|1': '日头最毒的时候，连水面都晃得人睁不开眼。阿尔瓦递过来一小杯冰水：『别在太阳底下待太久，会中暑的。』',
+        'summer|2': '草尖开始发黄了，风里带着一点说不清的凉意。阿尔瓦望着河面：『夏天要过去了……今年过得真快。』',
+        'autumn|0': '梧桐的叶子刚转成半黄半绿，石阶上只有零星几片。阿尔瓦轻声说：『秋天才刚开始，慢慢来。』',
+        'autumn|1': '满地都是踩上去会响的落叶。阿尔瓦抬头看了看树：『这个时候的莱顿最好看，可惜只有一个月。』',
+        'autumn|2': '树根旁边结了一窝圆滚滚的南瓜，藤蔓一直爬到石阶上。阿尔瓦蹲下来，指尖轻轻敲了敲最大的那只，眼睛弯了起来：『……你看，它们长得比去年好。』',
+        'winter|0': '第一场雪只盖住了石阶的一层，缝里还透出深色的石板。阿尔瓦拢了拢外套：『雪不大，路还好走。』',
+        'winter|1': '雪把整条堤岸都埋了，屋檐下挂着一排冰棱。阿尔瓦把围巾往上拉了拉：『脚下滑，走慢一点，我在这儿等着。』',
+        'winter|2': '雪开始化了，石阶上留着一汪汪浅浅的积水，缝里冒出一点点新绿。阿尔瓦看着水洼里倒映的天空：『冬天也快过去了。』'
       };
-      showDialog(lines[sea.key] || lines.autumn);
+      showDialog(lines[sea.key + '|' + sea.phase] || lines['autumn|1']);
     }
 
 
@@ -2799,9 +3097,10 @@
     // 各季贴图的垂直微调（画布像素，正数向下）
     const TREE_DY = { winter: 6 };
     let treeImgCache = { key: null, cv: null };
-    function getSeasonTree(season, nightF) {
+    function getSeasonTree(season, phase, nightF) {
+      const ph = phase || 0;
       const k = Math.round(Math.min(1, Math.max(0, nightF)) * 20) / 20;
-      const ck = season + '|' + k;
+      const ck = season + '|' + ph + '|' + k;
       if (treeImgCache.key === ck) return treeImgCache.cv;
       const sc = TREE_SCALE[season] || 1;
       const tw = Math.round(TREE_AUTUMN_W * sc), th = Math.round(TREE_AUTUMN_H * sc);
@@ -2818,27 +3117,152 @@
           c.fillRect(x, 0, 1, TREE_PAD_TOP);
         }
       }
+      // 各季三阶段色调微调（只罩在树冠上部，让树叶随节气渐变）
+      const phaseTint = {
+        'spring|0': 'rgba(226, 242, 236, 0.34)', // 初春：霜气未退的浅嫩
+        'spring|1': 'rgba(255, 190, 214, 0.20)', // 仲春：柔粉繁花盛放
+        'spring|2': 'rgba(84, 176, 76, 0.26)',   // 春末：新叶转浓翠
+        'summer|0': 'rgba(150, 224, 106, 0.22)', // 初夏：清亮新绿
+        'summer|1': 'rgba(14, 82, 30, 0.28)',    // 仲夏：浓荫深翠
+        'summer|2': 'rgba(222, 172, 56, 0.26)',  // 夏末：叶尖染上夕阳金
+        'autumn|0': 'rgba(152, 176, 56, 0.30)',  // 初秋：半黄半绿
+        'autumn|1': 'rgba(240, 152, 30, 0.24)',  // 仲秋：灿烂金黄
+        'autumn|2': 'rgba(158, 38, 18, 0.34)',   // 秋末：深红枫锈色
+        'winter|0': 'rgba(166, 182, 200, 0.18)', // 初冬：清冷薄霜
+        'winter|1': 'rgba(238, 247, 255, 0.24)', // 仲冬：厚雪压枝
+        'winter|2': 'rgba(212, 230, 244, 0.16)'  // 冬末：冰雪消融
+      }[season + '|' + ph];
+      if (phaseTint) {
+        c.globalCompositeOperation = 'source-atop';
+        const g = c.createLinearGradient(0, 0, 0, th * 0.78);
+        g.addColorStop(0, phaseTint);
+        g.addColorStop(0.75, phaseTint);
+        g.addColorStop(1, 'rgba(0,0,0,0)');
+        c.fillStyle = g;
+        c.fillRect(0, 0, cv.width, cv.height);
+        c.globalCompositeOperation = 'source-over';
+      }
       const a = k * 0.62;
       if (a > 0.01) {
         c.globalCompositeOperation = 'source-atop';
         c.fillStyle = 'rgba(21,29,48,' + a.toFixed(3) + ')';
         c.fillRect(0, 0, cv.width, cv.height);
+        c.globalCompositeOperation = 'source-over';
       }
       treeImgCache = { key: ck, cv: cv };
       return cv;
     }
 
+    // 绘制一颗圆滚滚的像素小南瓜（深秋树根旁专属，阿尔瓦最喜欢的南瓜）
+    function drawPixelPumpkin(x, y, size, dimFn) {
+      const d = dimFn || (c => c);
+      if (size === 'lg') {
+        // 大南瓜 11x9：三瓣饱满的瓜身 + 卷曲瓜蒂
+        px(x + 2, y + 8, 7, 1, 'rgba(0,0,0,0.30)');
+        px(x + 1, y + 2, 9, 6, d('#d9591a'));
+        px(x, y + 3, 11, 4, d('#d9591a'));
+        // 中间瓣最亮
+        px(x + 3, y + 2, 5, 6, d('#ee7a22'));
+        px(x + 4, y + 2, 3, 6, d('#f89833'));
+        // 高光
+        px(x + 4, y + 3, 2, 2, d('#ffc069'));
+        px(x + 5, y + 3, 1, 1, d('#ffe0a8'));
+        // 瓜棱暗线
+        px(x + 2, y + 3, 1, 4, d('#a8410c'));
+        px(x + 8, y + 3, 1, 4, d('#a8410c'));
+        px(x + 5, y + 2, 1, 6, d('#c24e12'));
+        // 底部压暗
+        px(x + 1, y + 7, 9, 1, d('#b8460f'));
+        // 墨绿瓜蒂 + 卷须
+        px(x + 5, y, 2, 2, d('#3d6b2b'));
+        px(x + 5, y - 1, 1, 1, d('#4e7d38'));
+        px(x + 7, y + 1, 3, 1, d('#588c3e'));
+        px(x + 9, y + 2, 1, 1, d('#4e7d38'));
+        px(x - 1, y + 3, 1, 1, d('#4e7d38'));
+      } else if (size === 'md') {
+        // 中南瓜 8x6
+        px(x + 1, y + 6, 6, 1, 'rgba(0,0,0,0.25)');
+        px(x + 1, y + 1, 6, 5, d('#cf5315'));
+        px(x, y + 2, 8, 3, d('#cf5315'));
+        px(x + 2, y + 1, 4, 5, d('#e87420'));
+        px(x + 3, y + 1, 2, 5, d('#f59331'));
+        px(x + 3, y + 2, 1, 1, d('#ffc172'));
+        px(x + 1, y + 5, 6, 1, d('#b04510'));
+        px(x + 3, y, 2, 1, d('#3d6b2b'));
+        px(x + 4, y - 1, 1, 1, d('#588c3e'));
+      } else {
+        // 迷你奶油小南瓜 6x5
+        px(x + 1, y + 4, 4, 1, 'rgba(0,0,0,0.22)');
+        px(x + 1, y + 1, 4, 3, d('#e07b24'));
+        px(x, y + 2, 6, 1, d('#e07b24'));
+        px(x + 2, y + 1, 2, 3, d('#f7a440'));
+        px(x + 2, y + 2, 1, 1, d('#ffc97a'));
+        px(x + 2, y, 1, 1, d('#4a7833'));
+      }
+    }
+
     function drawSeasonTree(sea, nightF) {
+      const dim = c => mixColor(c, '#151d30', Math.min(1, nightF) * 0.62);
       const timg = TREE_IMG[sea.key];
       if (timg && timg.complete && timg.naturalWidth > 0) {
         const sc = TREE_SCALE[sea.key] || 1;
         const tw = Math.round(TREE_AUTUMN_W * sc), th = Math.round(TREE_AUTUMN_H * sc);
         const dy = TREE_DY[sea.key] || 0;
-        ctx.drawImage(getSeasonTree(sea.key, nightF),
-          TREE_AUTUMN_X + (TREE_AUTUMN_W - tw), TREE_AUTUMN_Y + (TREE_AUTUMN_H - th) - TREE_PAD_TOP + dy);
+        const tx0 = TREE_AUTUMN_X + (TREE_AUTUMN_W - tw);
+        const ty0 = TREE_AUTUMN_Y + (TREE_AUTUMN_H - th) - TREE_PAD_TOP + dy;
+        ctx.drawImage(getSeasonTree(sea.key, sea.phase, nightF), tx0, ty0);
+
+        // 树冠与树干上的三阶段细节叠加
+        if (sea.key === 'spring') {
+          if (sea.phase === 0) {
+            // 初春：树冠里还露着几根没被新叶盖住的细枝
+            const twig = dim('#6b4a2e');
+            [[206, 40, 14, 1], [222, 30, 12, 1], [240, 22, 16, 1], [262, 18, 13, 1],
+             [282, 26, 15, 1], [300, 36, 12, 1], [214, 52, 11, 1], [246, 48, 13, 1]].forEach(t => {
+              px(t[0], t[1], t[2], t[3], twig);
+              px(t[0] + Math.floor(t[2] * 0.4), t[1] - 3, 1, 3, twig);
+              px(t[0] + Math.floor(t[2] * 0.7), t[1] + 2, 1, 3, twig);
+            });
+            // 背阴的树根缝里只剩指甲盖大的一点残雪星子
+            px(270, 116, 7, 2, dim('#e9f2fa'));
+            px(272, 115, 4, 1, dim('#ffffff'));
+          } else if (sea.phase === 1) {
+            // 仲春：满树粉白繁花盛放
+            const bl = ['#ffd6e6', '#ffffff', '#ffadc9', '#ffe8f0'];
+            [
+              [210, 28], [226, 18], [244, 24], [262, 14], [282, 22], [298, 30],
+              [218, 42], [238, 36], [256, 40], [274, 34], [290, 44], [306, 18],
+              [202, 34], [248, 12], [268, 26], [284, 12]
+            ].forEach((p, i) => {
+              px(p[0], p[1], 3, 2, dim(bl[i % bl.length]));
+              px(p[0] + 1, p[1] - 1, 1, 4, dim(bl[(i + 1) % bl.length]));
+            });
+          } else {
+            // 春末：花落成青果与垂下的翠绿新叶穗
+            const shoots = [[212, 46], [228, 50], [246, 44], [260, 48], [294, 46]];
+            shoots.forEach(p => {
+              px(p[0], p[1], 2, 5, dim('#6ec45a'));
+              px(p[0] + 1, p[1] + 2, 2, 2, dim('#a3e686'));
+            });
+          }
+        } else if (sea.key === 'winter') {
+          if (sea.phase >= 1) {
+            // 仲冬与冬末：树枝下挂着晶莹的冰棱
+            const icicles = sea.phase === 1
+              ? [[218, 52, 5], [234, 48, 7], [252, 54, 6], [268, 46, 8], [296, 50, 6], [206, 44, 4]]
+              : [[234, 48, 4], [268, 46, 5], [296, 50, 3]];
+            icicles.forEach(ic => {
+              px(ic[0], ic[1], 2, Math.ceil(ic[2] * 0.5), dim('#e6f4ff'));
+              px(ic[0], ic[1] + Math.ceil(ic[2] * 0.5), 1, Math.floor(ic[2] * 0.5), dim('#b5dcff'));
+              // 冬末冰尖滴水微光
+              if (sea.phase === 2 && (Math.floor(Date.now() / 450 + ic[0]) % 3 === 0)) {
+                px(ic[0], ic[1] + ic[2] + 2, 1, 2, '#d6f0ff');
+              }
+            });
+          }
+        }
         return;
       }
-      const dim = c => mixColor(c, '#151d30', Math.min(1, nightF) * 0.62);
       const bark = dim('#4b3527'), barkD = dim('#2e2118'), barkL = dim('#6b5138'), barkM = dim('#5b4330');
 
       // 树干：从石阶一路长到画面上方，越往上越收，粗到能挡住半条街
@@ -3040,6 +3464,26 @@
       px(0, 90, 320, 30, pal.sky[3]);
       px(0, 120, 320, 20, pal.sky[4]);
 
+      // 节气色调：同一天色下，十二个阶段的空气也有微妙差别
+      const seasonAir = {
+        'spring|0': 'rgba(198, 224, 246, 0.13)', // 初春：清冷、带着残雪的寒意
+        'spring|1': 'rgba(255, 214, 230, 0.09)', // 仲春：暖粉的花气
+        'spring|2': 'rgba(206, 246, 198, 0.07)', // 春末：湿润的青绿
+        'summer|0': 'rgba(255, 252, 200, 0.08)', // 初夏：通透的亮
+        'summer|1': 'rgba(255, 232, 158, 0.14)', // 仲夏：滚烫的金
+        'summer|2': 'rgba(255, 208, 132, 0.13)', // 夏末：偏暖的橘
+        'autumn|0': 'rgba(255, 244, 190, 0.08)', // 初秋：干爽的浅金
+        'autumn|1': 'rgba(255, 206, 132, 0.11)', // 仲秋：醇厚的琥珀
+        'autumn|2': 'rgba(238, 176, 128, 0.13)', // 秋末：沉下来的暖棕
+        'winter|0': 'rgba(212, 228, 246, 0.11)', // 初冬：干净的冷白
+        'winter|1': 'rgba(222, 236, 255, 0.17)', // 仲冬：雪光映着的苍蓝
+        'winter|2': 'rgba(206, 226, 244, 0.10)'  // 冬末：化雪时的湿冷
+      }[sea.key + '|' + sea.phase];
+      if (seasonAir) {
+        ctx.globalAlpha = 1;
+        px(0, 0, 320, 120, seasonAir);
+      }
+
       // 星星：只在夜色里浮现，轻轻呼吸
       if (nightF > 0.25) {
         const ts = Date.now() * 0.002;
@@ -3142,19 +3586,204 @@
         ctx.globalAlpha = 1;
       }
 
-      // 春草、郁金香与夏草：让四季的石阶不只是一个色块
+      // 春草、郁金香与夏草：让四季的石阶不只是一个色块（按节气阶段变化）
       if (sea.key === 'spring' || sea.key === 'summer') {
         const baseY = 138;
         const grassCol = sea.key === 'spring' ? '#7cb96a' : '#4b8a45';
+        // 初春只有稀稀拉拉的嫩芽，仲春才开出满阶郁金香，春末则更茂密
+        const sparse = sea.key === 'spring' && sea.phase === 0;
+        const lush = (sea.key === 'spring' && sea.phase === 2) || (sea.key === 'summer' && sea.phase === 1);
         groundDecor.forEach(d => {
           if (sea.key === 'summer' && d.x % 3 === 0) return;
-          px(d.x, baseY - d.h, 1, d.h, grassCol);
-          px(d.x + 1, baseY - d.h + 1, 1, d.h - 1, '#5f9d55');
-          if (sea.key === 'spring' && d.x % 2 === 0) {
-            px(d.x, baseY - d.h - 3, 2, 2, d.flower);
-            px(d.x + 1, baseY - d.h - 1, 1, 1, '#6aa85c');
+          if (sparse && d.x % 3 !== 0) return;      // 初春只留三分之一
+          if (!lush && sea.key === 'summer' && sea.phase === 2 && d.x % 4 === 0) return;
+          const gh = sparse ? Math.max(1, d.h - 1) : d.h;
+          px(d.x, baseY - gh, 1, gh, grassCol);
+          px(d.x + 1, baseY - gh + 1, 1, gh - 1, '#5f9d55');
+          // 郁金香只在仲春与春末开放
+          if (sea.key === 'spring' && sea.phase >= 1 && d.x % 2 === 0) {
+            px(d.x, baseY - gh - 3, 2, 2, d.flower);
+            px(d.x + 1, baseY - gh - 1, 1, 1, '#6aa85c');
+          }
+          // 仲春多一层花苞
+          if (sea.key === 'spring' && sea.phase === 1 && d.x % 5 === 0) {
+            px(d.x + 2, baseY - gh - 2, 1, 2, '#8fc47a');
+            px(d.x + 2, baseY - gh - 3, 1, 1, '#ffd0e0');
           }
         });
+      }
+
+      // ===== 十二个节气阶段的石阶地面细节 =====
+      const dm = c => mixColor(c, '#151d30', Math.min(1, nightF) * 0.62);
+      const gr = dm('#5b8a52');
+
+      // 一片边缘化开的残雪（中间厚、两头薄）
+      const snowPatch = (x, y, w, h, col, alpha) => {
+        ctx.globalAlpha = alpha;
+        for (let i = 0; i < w; i++) {
+          const t = (i + 0.5) / w;
+          const hh = Math.max(1, Math.round(h * Math.sin(t * Math.PI)));
+          px(x + i, y + h - hh, 1, hh, col);
+        }
+        // 雪面上的一点高光
+        const cxp = x + Math.floor(w / 2);
+        px(cxp, y + h - Math.max(1, Math.round(h * 0.8)), Math.max(1, Math.floor(w / 4)), 1, dm('#ffffff'));
+        ctx.globalAlpha = 1;
+      };
+      // 一汪浅浅的积水（深一点的水面 + 反光）
+      const puddle = (x, y, w) => {
+        for (let i = 0; i < w; i++) {
+          const t = (i + 0.5) / w;
+          const hh = Math.max(1, Math.round(3 * Math.sin(t * Math.PI)));
+          px(x + i, y + 3 - hh, 1, hh, dm('#7f9bb2'));
+        }
+        px(x + Math.floor(w * 0.3), y + 1, Math.max(2, Math.floor(w * 0.4)), 1, dm('#c6dced'));
+      };
+
+      if (sea.key === 'spring' && sea.phase === 0) {
+        // 初春：冬雪基本化尽了，只剩背阴墙根与长椅底下两小撮薄薄的残雪，比冬末少得多
+        snowPatch(8, 134, 14, 3, dm('#eef6fe'), 0.72);
+        snowPatch(154, 135, 11, 2, dm('#e8f1fa'), 0.62);
+        snowPatch(294, 134, 13, 3, dm('#eef6fe'), 0.68);
+        // 残雪刚化开的浅水痕
+        ctx.globalAlpha = 0.32;
+        px(6, 137, 18, 1, dm('#8ea6bb'));
+        px(152, 137, 15, 1, dm('#8ea6bb'));
+        px(292, 137, 17, 1, dm('#8ea6bb'));
+        ctx.globalAlpha = 1;
+        // 石缝里钻出第一茬嫩绿春草与几颗小花苞
+        [16, 38, 64, 88, 116, 142, 174, 202, 232, 258, 284, 308].forEach((gx, i) => {
+          px(gx, 135 - (i % 2), 1, 2 + (i % 2), dm('#8fd178'));
+          px(gx + 1, 136, 1, 2, dm('#b8e69e'));
+          if (i % 4 === 0) px(gx, 134 - (i % 2), 1, 1, dm('#ffd6e6'));
+        });
+      } else if (sea.key === 'spring' && sea.phase === 1) {
+        // 仲春：石阶上落了厚厚一层粉色花瓣，风一吹就往前滚
+        ctx.globalAlpha = 0.9;
+        for (let i = 0; i < 30; i++) {
+          const px0 = (i * 37 + ((i * 13) % 11) * 3) % 316;
+          px(px0, 133 + (i % 3), 2, 1, dm(i % 2 ? '#f6c3d4' : '#fde3ea'));
+        }
+        ctx.globalAlpha = 1;
+        // 花瓣堆在长椅腿与石阶夹角
+        px(bench.x - 8, 136, 10, 2, dm('#f3b8cd'));
+        px(bench.x + 42, 136, 8, 2, dm('#f9d2e0'));
+        px(bench.x - 14, 135, 5, 1, dm('#ffe9f1'));
+      } else if (sea.key === 'spring' && sea.phase === 2) {
+        // 春末：草长齐了，垂着几串新叶，青果还小
+        [8, 30, 52, 74, 96, 118, 140, 162, 184, 206, 228, 250, 272, 294].forEach((gx, i) => {
+          const gh = 3 + (i % 2);
+          px(gx, 138 - gh, 1, gh, gr);
+          px(gx + 1, 139 - gh, 1, gh - 1, dm('#7fb56f'));
+        });
+      }
+
+      if (sea.key === 'summer' && sea.phase === 0) {
+        // 初夏：石阶被晒得发亮，草丛里冒出成片小白花
+        ctx.globalAlpha = 0.10;
+        px(0, 119, 320, 19, '#fff3cc');
+        ctx.globalAlpha = 1;
+        [16, 40, 68, 92, 124, 168, 196, 224, 262, 290].forEach((gx, i) => {
+          if (i % 2) px(gx, 134, 1, 2, dm('#ffffff'));
+          else px(gx, 133, 1, 1, dm('#ffe98a'));
+        });
+      } else if (sea.key === 'summer' && sea.phase === 1) {
+        // 仲夏：日头最毒，石阶边缘泛白，草叶被晒得有点卷
+        ctx.globalAlpha = 0.16;
+        px(0, 119, 320, 12, '#fff8dd');
+        ctx.globalAlpha = 1;
+        for (let i = 0; i < 9; i++) {
+          const gx = 14 + i * 35;
+          px(gx, 135, 2, 1, dm('#8fae4e'));
+          px(gx, 136, 1, 1, dm('#6b8c3c'));
+        }
+      } else if (sea.key === 'summer' && sea.phase === 2) {
+        // 夏末：草尖开始发黄，风里有了一点秋的预告
+        [10, 34, 58, 82, 106, 130, 154, 178, 202, 226, 250, 274, 298].forEach((gx, i) => {
+          const gh = 3 + (i % 3);
+          px(gx, 138 - gh, 1, gh, dm(i % 3 === 0 ? '#c2b45c' : '#7fa84e'));
+        });
+        ctx.globalAlpha = 0.10;
+        px(0, 128, 320, 10, '#ffd98a');
+        ctx.globalAlpha = 1;
+      }
+
+      if (sea.key === 'autumn' && sea.phase === 0) {
+        // 初秋：叶子刚开始变色，石阶上只有零星几片
+        [[22, 134], [78, 132], [134, 135], [196, 133], [268, 136]].forEach((p, i) => {
+          px(p[0], p[1], 2, 1, dm(i % 2 ? '#d99a44' : '#c9743a'));
+        });
+      } else if (sea.key === 'autumn' && sea.phase === 1) {
+        // 仲秋：石阶被落叶铺了薄薄一层，踩上去沙沙响
+        for (let i = 0; i < 24; i++) {
+          const lx = (i * 41 + ((i * 7) % 13) * 2) % 314;
+          px(lx, 132 + (i % 4), 2, 1, dm(['#d99a44', '#c9743a', '#a9552a'][i % 3]));
+        }
+      } else if (sea.key === 'autumn' && sea.phase === 2) {
+        // 深秋：老梧桐树根旁结了一窝圆滚滚的南瓜，藤蔓爬过石阶
+        // 藤蔓
+        for (let i = 0; i < 10; i++) px(226 + i * 6, 129 + (i % 3) * 2, 4, 1, dm('#4e7d38'));
+        px(220, 127, 3, 1, dm('#588c3e'));
+        px(286, 133, 6, 1, dm('#4e7d38'));
+        // 藤叶
+        px(242, 124, 4, 2, dm('#5e9440'));
+        px(274, 126, 3, 2, dm('#4e7d38'));
+        px(214, 130, 2, 2, dm('#5e9440'));
+        // 四个大小不一的南瓜（最大的那只摆在最显眼的地方）
+        drawPixelPumpkin(232, 118, 'lg', dm);
+        drawPixelPumpkin(256, 124, 'md', dm);
+        drawPixelPumpkin(270, 127, 'sm', dm);
+        drawPixelPumpkin(292, 125, 'md', dm);
+        // 几片散落的枯叶压在南瓜旁
+        px(228, 132, 3, 1, dm('#a9552a'));
+        px(284, 133, 3, 1, dm('#c9743a'));
+        px(250, 133, 2, 1, dm('#d99a44'));
+        // 地上厚厚的落叶层
+        for (let i = 0; i < 16; i++) {
+          const lx = (i * 53 + ((i * 5) % 9) * 4) % 312;
+          px(lx, 136 + (i % 3), 2, 1, dm(['#a9552a', '#c9743a', '#8f3a1a'][i % 3]));
+        }
+      }
+
+      if (sea.key === 'winter' && sea.phase === 0) {
+        // 初冬：第一场雪还没积厚，只在石阶凹处留下一层薄白
+        snowPatch(10, 132, 26, 4, dm('#f0f7ff'), 0.55);
+        snowPatch(84, 134, 18, 3, dm('#e9f2fb'), 0.45);
+        snowPatch(160, 132, 30, 4, dm('#eef6ff'), 0.5);
+        snowPatch(248, 133, 24, 3, dm('#e9f2fb'), 0.45);
+        // 石阶上零星几片没扫走的枯叶
+        [[36, 136], [124, 137], [246, 136]].forEach((p, i) => {
+          px(p[0], p[1], 2, 1, dm(i % 2 ? '#8a6a3c' : '#a97a44'));
+        });
+      } else if (sea.key === 'winter' && sea.phase === 1) {
+        // 仲冬：厚雪上有人踩出的一道窄痕，雪堆成小丘
+        ctx.globalAlpha = 0.55;
+        px(18, 132, 96, 2, dm('#c3d2e0'));
+        px(158, 134, 118, 2, dm('#c3d2e0'));
+        ctx.globalAlpha = 1;
+        px(64, 120, 18, 3, dm('#ffffff'));
+        px(190, 119, 24, 4, dm('#fbfdff'));
+        px(286, 122, 14, 2, dm('#ffffff'));
+        // 屋檐垂下的冰棱（仲冬最长）
+        [[212, 52, 6], [236, 46, 8], [258, 54, 5], [280, 44, 7], [300, 50, 4]].forEach(ic => {
+          px(ic[0], ic[1], 2, Math.ceil(ic[2] * 0.6), dm('#e8f5ff'));
+          px(ic[0], ic[1] + Math.ceil(ic[2] * 0.6), 1, Math.floor(ic[2] * 0.4), dm('#a9d4f5'));
+        });
+      } else if (sea.key === 'winter' && sea.phase === 2) {
+        // 冬末：大雪开始消融，但石阶上还留着几大块半化的厚雪堆，雪堆之间渗出冰水洼（自然衔接仲冬与初春）
+        snowPatch(4, 129, 38, 7, dm('#f2f8ff'), 0.92);
+        snowPatch(66, 131, 28, 5, dm('#edf5fd'), 0.85);
+        snowPatch(138, 129, 42, 7, dm('#f4f9ff'), 0.90);
+        snowPatch(218, 131, 26, 5, dm('#ebf3fc'), 0.84);
+        snowPatch(278, 129, 36, 7, dm('#f2f8ff'), 0.90);
+        // 雪堆之间化开的冰水洼
+        puddle(44, 134, 18);
+        puddle(104, 134, 24);
+        puddle(188, 134, 22);
+        puddle(250, 134, 20);
+        // 融水顺着石阶缝往下渗
+        px(96, 129, 1, 6, dm('#b8cddd'));
+        px(212, 130, 1, 5, dm('#b8cddd'));
       }
 
       // 夏日水光 / 冬日冰面
@@ -3177,21 +3806,39 @@
       ctx.globalAlpha = 1;
 
       if (sea.key === 'autumn') {
-        leaves.forEach(l => {
-          l.y += l.speed;
+        // 初秋零星的落叶，仲秋纷纷扬扬，秋末几乎落尽只剩几片
+        const leafCount = sea.phase === 0 ? 7 : (sea.phase === 1 ? 16 : 5);
+        const leafSpeed = sea.phase === 1 ? 1.15 : 1;
+        leaves.slice(0, leafCount).forEach((l, i) => {
+          l.y += l.speed * leafSpeed;
           l.x += Math.sin(l.sway += 0.04) * 0.5;
           if (l.y > 136) {
             l.y = 10;
             l.x = Math.random() * 320;
           }
-          px(l.x, l.y, 2, 2, l.color);
+          const col = sea.phase === 0 ? (i % 2 ? '#b8a23c' : '#c9743a')
+            : sea.phase === 1 ? (i % 3 ? '#d99a44' : '#c9743a')
+              : (i % 2 ? '#8f3a1a' : '#a9552a');
+          px(l.x, l.y, 2, 2, col);
         });
       } else if (sea.key === 'spring') {
-        driftParticles(springPetals, 0.035, 0.9);
+        // 初春偶有残雪碎屑，仲春落英缤纷，春末只剩零星花瓣
+        if (sea.phase === 0) {
+          driftParticles(springPetals.slice(0, 4), 0.03, 0.45);
+        } else if (sea.phase === 1) {
+          driftParticles(springPetals, 0.05, 0.95);
+        } else {
+          driftParticles(springPetals.slice(0, 5), 0.03, 0.55);
+        }
       } else if (sea.key === 'summer') {
-        driftParticles(summerDust, 0.02, 0.55);
+        // 初夏空气清透，仲夏热浪浮动，夏末尘埃带着金光
+        if (sea.phase === 0) driftParticles(summerDust.slice(0, 8), 0.02, 0.35);
+        else if (sea.phase === 1) driftParticles(summerDust, 0.03, 0.75);
+        else driftParticles(summerDust.slice(0, 12), 0.02, 0.5);
       } else {
-        driftParticles(snowFlakes.slice(0, Math.max(8, Math.round(52 * snowF))), 0.03, 0.55 + 0.45 * snowF);
+        // 冬：初冬稀薄小雪，仲冬漫天大雪，冬末只剩几粒残雪
+        const flakeCount = sea.phase === 0 ? 26 : (sea.phase === 1 ? 52 : 14);
+        driftParticles(snowFlakes.slice(0, flakeCount), 0.03, 0.55 + 0.45 * snowF);
       }
 
       checkSeasonGreeting(sea);
@@ -3631,7 +4278,7 @@ function drawPixelHerman(hx, hy) {
         ctx.font = '8px monospace';
         ctx.fillStyle = '#ff6b81';
         ctx.textAlign = 'center';
-        ctx.fillText('0/100 (瘫倒休假中)', hx, hy - 12);
+        ctx.fillText('0/100 (瘫倒装死中)', hx, hy - 12);
 
       } else {
         // --- 正常端坐姿态 ---
@@ -4131,33 +4778,55 @@ let catAction = 'idle';
       ctx.restore();
     }
 
-dialog.addEventListener('click', () => {
-      dialog.classList.toggle('pos-bottom');
-    });
+    let logDayLabel = '';
+    let toastTimer = null;
+
+    // 往侧边日志里追加一条（永久保留，可滚动回看）
+    function logPush(text, opts) {
+      if (!logList) return;
+      const sea = (typeof seasonInfo === 'function') ? seasonInfo() : { icon: '🍂', name: '秋', phaseName: '初秋', day: 1 };
+      const label = sea.icon + ' ' + sea.name + '·' + sea.phaseName + ' · 第 ' + sea.day + ' 天';
+      if (label !== logDayLabel) {
+        logDayLabel = label;
+        const head = document.createElement('div');
+        head.className = 'log-day';
+        head.textContent = label;
+        logList.appendChild(head);
+      }
+      const prevNew = logList.querySelector('.log-line.new');
+      if (prevNew) prevNew.classList.remove('new');
+      const line = document.createElement('div');
+      line.className = 'log-line new' + (opts && opts.rare ? ' rare' : '');
+      line.textContent = text;
+      logList.appendChild(line);
+      while (logList.children.length > 240) logList.firstElementChild.remove();
+      logList.scrollTop = logList.scrollHeight;
+    }
+
+    // 画面下方只浮出最新一条
+    function showToast(text, dwell) {
+      if (!toastEl) return;
+      toastEl.textContent = text;
+      toastEl.classList.remove('show');
+      void toastEl.offsetWidth;
+      toastEl.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toastEl.classList.remove('show'), dwell);
+    }
 
     function showDialog(text, opts) {
       opts = opts || {};
-      const entry = document.createElement('div');
-      entry.className = 'log-entry';
-      entry.innerText = text;
-      dialog.appendChild(entry);
+      logPush(text, opts);
+      const dwell = opts.dwell || Math.min(6500, Math.max(2800, text.length * 75));
+      showToast(text, dwell);
+    }
 
-      // 只保留最近 6 条，超出时立刻移除最老的一条
-      while (dialog.children.length > 6) {
-        dialog.firstElementChild.remove();
-      }
-
-      // 滚到底部，让最新一条始终可见
-      dialog.scrollTop = dialog.scrollHeight;
-
-      // 每条停留时间：按字数算，最少 3.2 秒，最多 8 秒
-      const dwell = opts.dwell || Math.min(8000, Math.max(3200, text.length * 90));
-      const fadeAt = dwell;
-      setTimeout(() => {
-        if (!entry.isConnected) return;
-        entry.classList.add('fading');
-        setTimeout(() => entry.remove(), 1200);
-      }, fadeAt);
+    const logClearBtn = document.getElementById('logClear');
+    if (logClearBtn) {
+      logClearBtn.addEventListener('click', () => {
+        if (logList) logList.innerHTML = '';
+        logDayLabel = '';
+      });
     }
 
     // 小猫战绩统计（本地存储持久化）
@@ -4165,6 +4834,34 @@ dialog.addEventListener('click', () => {
     let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
     let totalBossKoCount = parseInt(localStorage.getItem('cat_boss_ko_count') || '0', 10);
     let totalDiamondKoCount = parseInt(localStorage.getItem('cat_diamond_ko_count') || '0', 10);
+
+    // 🐟 小鱼干：散步喵叫、挠击、击倒赫尔曼都会掉一点，存在本地，以后用来买点心
+    let driedFish = parseInt(localStorage.getItem('cat_dried_fish') || '20', 10);
+    if (!Number.isFinite(driedFish) || driedFish < 0) driedFish = 0;
+    const fishCountEl = document.getElementById('fishCount');
+    const fishBadgeEl = document.getElementById('fishBadge');
+
+    function renderFishUI(animate) {
+      if (fishCountEl) fishCountEl.innerText = driedFish;
+      const modalFishEl = document.getElementById('modalStatFish');
+      if (modalFishEl) modalFishEl.innerText = driedFish;
+      if (animate && fishBadgeEl) {
+        fishBadgeEl.classList.remove('pop');
+        void fishBadgeEl.offsetWidth;
+        fishBadgeEl.classList.add('pop');
+        setTimeout(() => fishBadgeEl.classList.remove('pop'), 220);
+      }
+    }
+
+    function gainFish(amount, reason) {
+      if (!amount) return;
+      driedFish += amount;
+      try { localStorage.setItem('cat_dried_fish', driedFish); } catch (e) {}
+      renderFishUI(true);
+      if (reason) showDialog(`【🐟 +${amount} 小鱼干】${reason}（余额 ${driedFish} 条）`);
+    }
+
+    renderFishUI(false);
     let totalWaffleCount = parseInt(localStorage.getItem('cat_waffle_count') || '0', 10);
     let totalLegendWaffle = parseInt(localStorage.getItem('cat_legend_waffle') || '0', 10);
     let totalNuzzleCount = parseInt(localStorage.getItem('cat_nuzzle_count') || '0', 10);
@@ -4206,7 +4903,7 @@ dialog.addEventListener('click', () => {
       } else if (totalKoCount < 5) {
         statsFlavor.innerText = `“赫尔曼已经被你放倒了 ${totalKoCount} 次，白手帕都快挥出火星了！阿尔瓦一边叹气，一边偷偷在背后给你塞了块华夫饼。”`;
       } else {
-        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮课题组熬夜冠军终结者’称号非你莫属！继续投喂华夫饼，去挑战黄金甚至钻石大BOSS吧！”`;
+        statsFlavor.innerText = `“足足击倒赫尔曼 ${totalKoCount} 次！‘永动轮阁楼实验室头号克星’称号非你莫属！继续投喂华夫饼，去挑战黄金甚至钻石大BOSS吧！”`;
       }
       if (hermanHitTotal > 0) {
         const stageNames = ['老样子', '开始提防你', '见你就护衣服', '已经认命了', '把你当自家人'];
@@ -4349,7 +5046,7 @@ dialog.addEventListener('click', () => {
         icon: '💗',
         name: '第一声呼噜',
         desc: '第一次凑到阿尔瓦脚边互动撒娇',
-        reward: '称号：教授的心头软肉',
+        reward: '称号：阿尔瓦的心头软肉',
         check: () => totalNuzzleCount >= 1,
         progress: () => `${Math.min(totalNuzzleCount, 1)}/1`
       },
@@ -4706,6 +5403,7 @@ dialog.addEventListener('click', () => {
           setTimeout(() => modalStatDiamond.classList.remove('bump'), 220);
         }
       }
+      renderFishUI(false);
       updateFlavorText();
       checkAchievements();
     }
@@ -4978,6 +5676,7 @@ dialog.addEventListener('click', () => {
       totalMeowCount++;
       try { localStorage.setItem('cat_meow_count', totalMeowCount); } catch (e) {}
       updateStatsUI(true, false);
+      gainFish(1);
 
       const distAlva = Math.abs(cat.x - alva.x);
       let meowText = '';
@@ -5027,8 +5726,7 @@ dialog.addEventListener('click', () => {
         totalNuzzleCount++;
         try { localStorage.setItem('cat_nuzzle_count', totalNuzzleCount); } catch (e) {}
         checkAchievements();
-        showDialog(alvaDialogues[alvaDialogIndex % alvaDialogues.length]);
-        alvaDialogIndex++;
+        showDialog(pickAlvaIdleLine());
       } else if (distHerman < 45) {
         showDialog(pickHermanIdleLine());
       } else {
@@ -5236,6 +5934,7 @@ dialog.addEventListener('click', () => {
           ventDamage += damage;
           ventHits++;
           ventTotalHits++;
+          gainFish(1);
           if (comboCount > ventMaxCombo) { ventMaxCombo = comboCount; saveNum('cat_vent_max_combo', ventMaxCombo); }
           if (ventDamage > ventMaxDamage) { ventMaxDamage = ventDamage; saveNum('cat_vent_max_damage', ventMaxDamage); }
           saveNum('cat_vent_total_hits', ventTotalHits);
@@ -5258,12 +5957,15 @@ dialog.addEventListener('click', () => {
           return;
         }
 
+        if (bench.hp > 0) gainFish(1); // 每挠中一下，长椅上掉一条小鱼干
+
         if (bench.hp === 0) {
           const bossMode = bench.bossType;
           if (bossMode === 'diamond') {
             SFX.shatter();
             totalDiamondKoCount++;
             try { localStorage.setItem('cat_diamond_ko_count', totalDiamondKoCount); } catch (e) {}
+            gainFish(80);
             totalKoCount++;
             try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
             updateStatsUI(false, true, false, true);
@@ -5272,6 +5974,7 @@ dialog.addEventListener('click', () => {
           } else if (bossMode === 'gold') {
             totalBossKoCount++;
             try { localStorage.setItem('cat_boss_ko_count', totalBossKoCount); } catch (e) {}
+            gainFish(30);
             totalKoCount++;
             try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
             updateStatsUI(false, true, true, false);
@@ -5281,6 +5984,7 @@ dialog.addEventListener('click', () => {
             totalKoCount++;
             try { localStorage.setItem('cat_ko_count', totalKoCount); } catch (e) {}
             updateStatsUI(false, true, false, false);
+            gainFish(8);
 
             showDialog(`【像素暴击！-${damage} HP${comboTag}${critTag}】赫尔曼血条被打空瘫倒在长椅上！${koDialogues[Math.floor(Math.random() * koDialogues.length)]}`, { dwell: 5000 });
           }
@@ -5761,7 +6465,7 @@ dialog.addEventListener('click', () => {
       c.fillText('莱顿运河畔的猫咪漫步', W - 60, 962);
       c.fillStyle = '#c9a227';
       c.font = '600 15px ' + SHARE_FONT;
-      c.fillText('ALVA.TELCOM · 小猫漫步', W - 60, 1002);
+      c.fillText('ALVA LORENZ · 永动轮阁楼实验室', W - 60, 1002);
       c.textAlign = 'left';
     }
 
