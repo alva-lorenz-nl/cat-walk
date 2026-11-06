@@ -7061,16 +7061,14 @@ let catAction = 'idle';
       const gotCount = got.filter(x => x.got).length;
       const unlockedAchs = got.filter(x => x.got).map(x => x.ach);
       const unlockedHiddenCount = unlockedAchs.filter(a => a.hidden).length;
-      const veiledCount = got.filter(x => !x.got && x.ach.hidden).length;
 
-      // 3 列紧凑徽章网格：每行 3 个，再多成就也能自适应长图完整展示！
+      // 3 列紧凑徽章网格：仅展示已完成的成就，自适应高度不留多余空白
       const COLS = 3;
       const rows = Math.max(1, Math.ceil(unlockedAchs.length / COLS));
       const rowH = 38;
-      const listStartY = 622;
-      const listEndY = unlockedAchs.length === 0 ? (listStartY + 54) : (listStartY + rows * rowH);
-      const veiledY = veiledCount > 0 ? (listEndY + 22) : listEndY;
-      const footerLineY = Math.max(880, veiledY + 26);
+      const listStartY = 616;
+      const listEndY = unlockedAchs.length === 0 ? (listStartY + 48) : (listStartY + rows * rowH);
+      const footerLineY = Math.max(720, listEndY + 24);
       const W = 720;
       const H = footerLineY + 118;
 
@@ -7173,7 +7171,7 @@ let catAction = 'idle';
         ['🧇', '投喂华夫饼', fmt(totalWaffleCount)],
         ['💗', '阿尔瓦贴贴', fmt(totalNuzzleCount)],
         ['👣', '漫步里程', fmt(Math.floor(totalWalkDist))],
-        ['🏆', '成就达成', gotCount + ' / ' + achievementsList.length]
+        ['🏆', '已获成就', fmt(gotCount) + ' 项']
       ];
       const gx = 284, gy = 336, gw = 180, gh = 45, gapX = 16, gapY = 8;
       cells.forEach((cell, i) => {
@@ -7192,35 +7190,21 @@ let catAction = 'idle';
         c.textAlign = 'left';
       });
 
-      // —— 成就清单（3 列自适应网格，完整展示全部已解锁成就） ——
+      // —— 已达成成就展示（只显示已完成的成就，不剧透未解锁/隐藏项） ——
       c.fillStyle = '#c9a227';
       c.font = 'bold 21px ' + SHARE_FONT;
-      c.fillText('🏆 漫步荣耀成就全览', 60, 594);
+      c.fillText('🏆 已达成的荣耀成就', 60, 594);
       c.font = '15px ' + SHARE_FONT;
       c.fillStyle = '#a89a88';
       c.textAlign = 'right';
       const hiddenTag = unlockedHiddenCount > 0 ? `（含 ${unlockedHiddenCount} 项隐藏彩蛋✨）` : '';
-      c.fillText(`已点亮 ${gotCount} / ${achievementsList.length} 项${hiddenTag}`, W - 60, 594);
+      c.fillText(`共达成 ${gotCount} 项${hiddenTag}`, W - 60, 594);
       c.textAlign = 'left';
-
-      // 进度条
-      c.fillStyle = 'rgba(255,255,255,0.06)';
-      shareRoundRect(c, 60, 604, W - 120, 6, 3);
-      c.fill();
-      if (gotCount > 0) {
-        const pw = Math.max(8, Math.round((W - 120) * (gotCount / achievementsList.length)));
-        const pgrad = c.createLinearGradient(60, 0, 60 + pw, 0);
-        pgrad.addColorStop(0, '#c9a227');
-        pgrad.addColorStop(1, '#f4d068');
-        c.fillStyle = pgrad;
-        shareRoundRect(c, 60, 604, pw, 6, 3);
-        c.fill();
-      }
 
       if (unlockedAchs.length === 0) {
         c.fillStyle = '#7d736a';
         c.font = '16px ' + SHARE_FONT;
-        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, listStartY + 26);
+        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, listStartY + 24);
       } else {
         const badgeW = 192, badgeH = 31, badgeGapX = 12;
         unlockedAchs.forEach((a, i) => {
@@ -7249,12 +7233,6 @@ let catAction = 'idle';
           if (title !== a.name) title += '…';
           c.fillText(title, x + 36, y + 21);
         });
-      }
-
-      if (veiledCount > 0) {
-        c.fillStyle = '#7b7064';
-        c.font = '14px ' + SHARE_FONT;
-        c.fillText(`🔒 运河深处另有 ${veiledCount} 项隐藏成就等待小猫探索发现…`, 60, veiledY);
       }
 
       // —— 页脚 ——
