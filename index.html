@@ -5358,6 +5358,51 @@ let catAction = 'idle';
         progress: () => `${Math.min(totalMeowCount, 20)}/20`
       },
       {
+        id: 'meow_100',
+        icon: '🎼',
+        name: '运河女高音',
+        desc: '累计喵叫 100 声，把运河唱成一条五线谱',
+        reward: '称号：莱顿运河首席喵唱家',
+        check: () => totalMeowCount >= 100,
+        progress: () => `${Math.min(totalMeowCount, 100)}/100`
+      },
+      {
+        id: 'nuzzle_1',
+        icon: '💗',
+        name: '第一声呼噜',
+        desc: '第一次凑到阿尔瓦脚边互动撒娇',
+        reward: '称号：阿尔瓦的心头软肉',
+        check: () => totalNuzzleCount >= 1,
+        progress: () => `${Math.min(totalNuzzleCount, 1)}/1`
+      },
+      {
+        id: 'nuzzle_30',
+        icon: '🫧',
+        name: '阿尔瓦的影子',
+        desc: '累计和阿尔瓦贴贴 30 次',
+        reward: '称号：大衣下摆的常驻住户',
+        check: () => totalNuzzleCount >= 30,
+        progress: () => `${Math.min(totalNuzzleCount, 30)}/30`
+      },
+      {
+        id: 'walk_far',
+        icon: '👟',
+        name: '运河长跑猫',
+        desc: '沿运河累计走出 20000 像素的路程',
+        reward: '称号：堤岸计步器终结者',
+        check: () => totalWalkDist >= 20000,
+        progress: () => `${Math.min(Math.floor(totalWalkDist), 20000)}/20000`
+      },
+      {
+        id: 'night_walk',
+        icon: '🌙',
+        name: '深夜的运河',
+        desc: '在夜里十点后或凌晨时分还出来散步',
+        reward: '称号：不睡觉的小夜猫',
+        check: () => nightWalkFlag,
+        progress: () => `${nightWalkFlag ? 1 : 0}/1`
+      },
+      {
         id: 'ko_1',
         icon: '🐾',
         name: '第一记肉垫',
@@ -5374,6 +5419,24 @@ let catAction = 'idle';
         reward: '获得：阿尔瓦私藏的特制焦糖华夫饼',
         check: () => totalKoCount >= 5,
         progress: () => `${Math.min(totalKoCount, 5)}/5`
+      },
+      {
+        id: 'ko_20',
+        icon: '💢',
+        name: '长椅上的噩梦',
+        desc: '累计击倒赫尔曼 20 次',
+        reward: '称号：长椅清场专员',
+        check: () => totalKoCount >= 20,
+        progress: () => `${Math.min(totalKoCount, 20)}/20`
+      },
+      {
+        id: 'ko_100',
+        icon: '🩹',
+        name: '赫尔曼的心理阴影',
+        desc: '累计击倒赫尔曼 100 次，连他自己都开始怀疑人生',
+        reward: '称号：永动轮终身名誉克星',
+        check: () => totalKoCount >= 100,
+        progress: () => `${Math.min(totalKoCount, 100)}/100`
       },
       {
         id: 'gold_1',
@@ -5412,51 +5475,40 @@ let catAction = 'idle';
         progress: () => `${Math.min(totalDiamondKoCount, 10)}/10`
       },
       {
-        id: 'meow_100',
-        icon: '🎼',
-        name: '运河女高音',
-        desc: '累计喵叫 100 声，把运河唱成一条五线谱',
-        reward: '称号：莱顿运河首席喵唱家',
-        check: () => totalMeowCount >= 100,
-        progress: () => `${Math.min(totalMeowCount, 100)}/100`
+        id: 'hit_herman_100',
+        icon: '🍪',
+        name: '随身针线包',
+        desc: '累计挠中赫尔曼 100 爪，不仅逼得他带针线包，还从他兜里抖落了一盒曲奇',
+        reward: '获得：【🍪 赫尔曼的救急黄油曲奇】',
+        check: () => hermanHitTotal >= 100,
+        progress: () => `${Math.min(hermanHitTotal, 100)}/100爪`
       },
       {
-        id: 'midnight_meow_15',
-        icon: '🌙🎶',
-        hidden: true,
-        name: '午夜运河小夜曲',
-        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 15 声——赫尔曼顶着黑眼圈合上论文，阿尔瓦披着大衣出来哄你',
-        reward: '称号：熬夜实验室的催眠曲',
-        check: () => midnightMeowCount >= 15,
-        progress: () => `${Math.min(midnightMeowCount, 15)}/15声`
+        id: 'hit_herman_350',
+        icon: '🍮',
+        name: '备用马甲第六件',
+        desc: '累计挠中赫尔曼 350 爪，他认命地从公文包里掏出甜品向你进贡',
+        reward: '获得：【🍮 塞曼先生的焦糖奶油冻】',
+        check: () => hermanHitTotal >= 350,
+        progress: () => `${Math.min(hermanHitTotal, 350)}/350爪`
       },
       {
-        id: 'midnight_meow_50',
-        icon: '🦉🔔',
-        hidden: true,
-        name: '莱顿午夜打更喵',
-        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 50 声——整条运河的宿鸟、路灯和两位未来科学家都被你叫精神了喵！',
-        reward: '至高称号：午夜交响乐指挥家',
-        check: () => midnightMeowCount >= 50,
-        progress: () => `${Math.min(midnightMeowCount, 50)}/50声`
+        id: 'hit_herman_800',
+        icon: '🔔',
+        name: '巴普洛夫的认命',
+        desc: '累计挠中赫尔曼 800 爪，他已经熟练地从长椅下抽出第三块猫抓板',
+        reward: '称号：赫尔曼先生的习惯性妥协',
+        check: () => hermanHitTotal >= 800,
+        progress: () => `${Math.min(hermanHitTotal, 800)}/800爪`
       },
       {
-        id: 'ko_20',
-        icon: '💢',
-        name: '长椅上的噩梦',
-        desc: '累计击倒赫尔曼 20 次',
-        reward: '称号：长椅清场专员',
-        check: () => totalKoCount >= 20,
-        progress: () => `${Math.min(totalKoCount, 20)}/20`
-      },
-      {
-        id: 'ko_100',
-        icon: '🩹',
-        name: '赫尔曼的心理阴影',
-        desc: '累计击倒赫尔曼 100 次，连他自己都开始怀疑人生',
-        reward: '称号：永动轮终身名誉克星',
-        check: () => totalKoCount >= 100,
-        progress: () => `${Math.min(totalKoCount, 100)}/100`
+        id: 'hit_herman_2000',
+        icon: '🛋️',
+        name: '长椅上的自家人',
+        desc: '累计挠中赫尔曼 2000 爪——他把被挠坏的衣服全留在阁楼，等你来坐坐',
+        reward: '至高称号：赫尔曼认命的编外家人',
+        check: () => hermanHitTotal >= 2000,
+        progress: () => `${Math.min(hermanHitTotal, 2000)}/2000爪`
       },
       {
         id: 'waffle_1',
@@ -5486,22 +5538,40 @@ let catAction = 'idle';
         progress: () => `${Math.min(totalLegendWaffle, 1)}/1`
       },
       {
-        id: 'nuzzle_1',
-        icon: '💗',
-        name: '第一声呼噜',
-        desc: '第一次凑到阿尔瓦脚边互动撒娇',
-        reward: '称号：阿尔瓦的心头软肉',
-        check: () => totalNuzzleCount >= 1,
-        progress: () => `${Math.min(totalNuzzleCount, 1)}/1`
+        id: 'fish_50',
+        icon: '🐟',
+        name: '小有积蓄',
+        desc: '小猫兜里的小鱼干余额达到 50 条',
+        reward: '称号：兜里有粮的小猫',
+        check: () => driedFish >= 50,
+        progress: () => `${Math.min(driedFish, 50)}/50`
       },
       {
-        id: 'nuzzle_30',
-        icon: '🫧',
-        name: '阿尔瓦的影子',
-        desc: '累计和阿尔瓦贴贴 30 次',
-        reward: '称号：大衣下摆的常驻住户',
-        check: () => totalNuzzleCount >= 30,
-        progress: () => `${Math.min(totalNuzzleCount, 30)}/30`
+        id: 'fish_200',
+        icon: '🧺',
+        name: '罐头自由',
+        desc: '小鱼干余额攒满 200 条，走起路来叮当响',
+        reward: '称号：运河小富喵',
+        check: () => driedFish >= 200,
+        progress: () => `${Math.min(driedFish, 200)}/200`
+      },
+      {
+        id: 'fish_500',
+        icon: '🏦',
+        name: '莱顿水产大亨',
+        desc: '小鱼干余额达到 500 条，连河里的水鸟都想跟你借粮',
+        reward: '称号：阿尔瓦电信首席股东喵',
+        check: () => driedFish >= 500,
+        progress: () => `${Math.min(driedFish, 500)}/500`
+      },
+      {
+        id: 'fish_1500',
+        icon: '👑🐟',
+        name: '黄金鱼仓之主',
+        desc: '小鱼干余额突破 1500 条，整条莱顿运河都是你的小鱼塘！',
+        reward: '至高称号：北海鱼干财阀',
+        check: () => driedFish >= 1500,
+        progress: () => `${Math.min(driedFish, 1500)}/1500`
       },
       {
         id: 'skin_3',
@@ -5531,22 +5601,94 @@ let catAction = 'idle';
         progress: () => `${equipBothFlag ? 1 : 0}/1`
       },
       {
-        id: 'walk_far',
-        icon: '👟',
-        name: '运河长跑猫',
-        desc: '沿运河累计走出 20000 像素的路程',
-        reward: '称号：堤岸计步器终结者',
-        check: () => totalWalkDist >= 20000,
-        progress: () => `${Math.min(Math.floor(totalWalkDist), 20000)}/20000`
+        id: 'midnight_meow_15',
+        icon: '🌙🎶',
+        hidden: true,
+        name: '午夜运河小夜曲',
+        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 15 声——赫尔曼顶着黑眼圈合上论文，阿尔瓦披着大衣出来哄你',
+        reward: '称号：熬夜实验室的催眠曲',
+        check: () => midnightMeowCount >= 15,
+        progress: () => `${Math.min(midnightMeowCount, 15)}/15声`
       },
       {
-        id: 'night_walk',
-        icon: '🌙',
-        name: '深夜的运河',
-        desc: '在夜里十点后或凌晨时分还出来散步',
-        reward: '称号：不睡觉的小夜猫',
-        check: () => nightWalkFlag,
-        progress: () => `${nightWalkFlag ? 1 : 0}/1`
+        id: 'midnight_meow_50',
+        icon: '🦉🔔',
+        hidden: true,
+        name: '莱顿午夜打更喵',
+        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 50 声——整条运河的宿鸟、路灯和两位未来科学家都被你叫精神了喵！',
+        reward: '至高称号：午夜交响乐指挥家',
+        check: () => midnightMeowCount >= 50,
+        progress: () => `${Math.min(midnightMeowCount, 50)}/50声`
+      },
+      {
+        id: 'hit_herman_520',
+        icon: '💘',
+        hidden: true,
+        name: '是爱你的形状喵',
+        desc: '累计挠中赫尔曼 520 爪——仔细一看，他深红马甲上被猫抓出的破洞居然拼成了一个标准的心形喵～',
+        reward: '称号：灵魂心形裁缝喵',
+        check: () => hermanHitTotal >= 520,
+        progress: () => `${Math.min(hermanHitTotal, 520)}/520爪`
+      },
+      {
+        id: 'hit_herman_1314',
+        icon: '🧶',
+        hidden: true,
+        name: '一辈子锁死在长椅上',
+        desc: '累计挠中赫尔曼 1314 爪——打是亲骂是爱，照小猫这个挠法，赫尔曼这辈子都别想活着站起这条长椅了喵！',
+        reward: '称号：一生一世的冤家债主',
+        check: () => hermanHitTotal >= 1314,
+        progress: () => `${Math.min(hermanHitTotal, 1314)}/1314爪`
+      },
+      {
+        id: 'vent_enter',
+        icon: '💢',
+        hidden: true,
+        name: '血条？什么血条',
+        desc: '第一次按下发泄模式的按钮，把赫尔曼头顶那截绿色彻底抹掉',
+        reward: '称号：不讲武德的猫',
+        check: () => ventEnterCount >= 1,
+        progress: () => `${Math.min(ventEnterCount, 1)}/1`
+      },
+      {
+        id: 'vent_combo_30',
+        icon: '🌪',
+        hidden: true,
+        name: '三十爪不停歇',
+        desc: '在发泄模式里打出 30 连击，赫尔曼连一句完整的话都说不出来',
+        reward: '称号：连击艺术家',
+        check: () => ventMaxCombo >= 30,
+        progress: () => `${Math.min(ventMaxCombo, 30)}/30`
+      },
+      {
+        id: 'vent_combo_60',
+        icon: '☄️',
+        hidden: true,
+        name: '爪影成风',
+        desc: '在发泄模式里打出 60 连击，长椅上只剩一团被挠乱的围巾',
+        reward: '称号：风暴之爪',
+        check: () => ventMaxCombo >= 60,
+        progress: () => `${Math.min(ventMaxCombo, 60)}/60`
+      },
+      {
+        id: 'vent_damage_5000',
+        icon: '🔥',
+        hidden: true,
+        name: '挠了五千点',
+        desc: '在一次发泄模式里累计挠出 5000 点伤害——他一点血没掉，你却挠得心满意足',
+        reward: '称号：纯伤害的浪漫',
+        check: () => ventMaxDamage >= 5000,
+        progress: () => `${Math.min(ventMaxDamage, 5000)}/5000`
+      },
+      {
+        id: 'vent_hits_300',
+        icon: '🐾',
+        hidden: true,
+        name: '三百爪的耐心',
+        desc: '在发泄模式里累计挠满 300 爪，赫尔曼的衣领已经彻底开线',
+        reward: '获得：赫尔曼开线的旧领巾',
+        check: () => ventTotalHits >= 300,
+        progress: () => `${Math.min(ventTotalHits, 300)}/300`
       },
       {
         id: 'time_jump_1d',
@@ -5587,6 +5729,16 @@ let catAction = 'idle';
         reward: '称号：时间的旁观者',
         check: () => timeSkipTotalHours >= YEAR_HOURS,
         progress: () => `${Math.min(Math.floor(timeSkipTotalHours / 24), 360)}/360天`
+      },
+      {
+        id: 'time_limit_future',
+        icon: '🌇',
+        hidden: true,
+        name: '走到时间的尽头',
+        desc: '把运河畔的时针一路拨到再也不能往前的地方，那天的风里，已经闻不到今年的桂花味了',
+        reward: '称号：站在尽头的人',
+        check: () => timeMaxOffsetHours >= TIME_LIMIT_HOURS,
+        progress: () => `${Math.min(Math.floor(timeMaxOffsetHours / 24), 999)}/999天`
       },
       {
         id: 'time_back_first',
@@ -5639,16 +5791,6 @@ let catAction = 'idle';
         progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 360)}/360天`
       },
       {
-        id: 'time_limit_future',
-        icon: '🌇',
-        hidden: true,
-        name: '走到时间的尽头',
-        desc: '把运河畔的时针一路拨到再也不能往前的地方，那天的风里，已经闻不到今年的桂花味了',
-        reward: '称号：站在尽头的人',
-        check: () => timeMaxOffsetHours >= TIME_LIMIT_HOURS,
-        progress: () => `${Math.min(Math.floor(timeMaxOffsetHours / 24), 999)}/999天`
-      },
-      {
         id: 'time_limit_past',
         icon: '🌌',
         hidden: true,
@@ -5658,151 +5800,6 @@ let catAction = 'idle';
         check: () => timeBackMinOffset <= -TIME_LIMIT_HOURS,
         progress: () => `${Math.min(Math.floor(-timeBackMinOffset / 24), 999)}/999天`
       },
-      {
-        id: 'vent_enter',
-        icon: '💢',
-        hidden: true,
-        name: '血条？什么血条',
-        desc: '第一次按下发泄模式的按钮，把赫尔曼头顶那截绿色彻底抹掉',
-        reward: '称号：不讲武德的猫',
-        check: () => ventEnterCount >= 1,
-        progress: () => `${Math.min(ventEnterCount, 1)}/1`
-      },
-      {
-        id: 'vent_combo_30',
-        icon: '🌪',
-        hidden: true,
-        name: '三十爪不停歇',
-        desc: '在发泄模式里打出 30 连击，赫尔曼连一句完整的话都说不出来',
-        reward: '称号：连击艺术家',
-        check: () => ventMaxCombo >= 30,
-        progress: () => `${Math.min(ventMaxCombo, 30)}/30`
-      },
-      {
-        id: 'vent_combo_60',
-        icon: '☄️',
-        hidden: true,
-        name: '爪影成风',
-        desc: '在发泄模式里打出 60 连击，长椅上只剩一团被挠乱的围巾',
-        reward: '称号：风暴之爪',
-        check: () => ventMaxCombo >= 60,
-        progress: () => `${Math.min(ventMaxCombo, 60)}/60`
-      },
-      {
-        id: 'vent_damage_5000',
-        icon: '🔥',
-        hidden: true,
-        name: '挠了五千点',
-        desc: '在一次发泄模式里累计挠出 5000 点伤害——他一点血没掉，你却挠得心满意足',
-        reward: '称号：纯伤害的浪漫',
-        check: () => ventMaxDamage >= 5000,
-        progress: () => `${Math.min(ventMaxDamage, 5000)}/5000`
-      },
-      {
-        id: 'vent_hits_300',
-        icon: '🐾',
-        hidden: true,
-        name: '三百爪的耐心',
-        desc: '在发泄模式里累计挠满 300 爪，赫尔曼的衣领已经彻底开线',
-        reward: '获得：赫尔曼开线的旧领巾',
-        check: () => ventTotalHits >= 300,
-        progress: () => `${Math.min(ventTotalHits, 300)}/300`
-      },
-      // ===== 🐟 小鱼干储蓄四档位成就 =====
-      {
-        id: 'fish_50',
-        icon: '🐟',
-        name: '小有积蓄',
-        desc: '小猫兜里的小鱼干余额达到 50 条',
-        reward: '称号：兜里有粮的小猫',
-        check: () => driedFish >= 50,
-        progress: () => `${Math.min(driedFish, 50)}/50`
-      },
-      {
-        id: 'fish_200',
-        icon: '🧺',
-        name: '罐头自由',
-        desc: '小鱼干余额攒满 200 条，走起路来叮当响',
-        reward: '称号：运河小富喵',
-        check: () => driedFish >= 200,
-        progress: () => `${Math.min(driedFish, 200)}/200`
-      },
-      {
-        id: 'fish_500',
-        icon: '🏦',
-        name: '莱顿水产大亨',
-        desc: '小鱼干余额达到 500 条，连河里的水鸟都想跟你借粮',
-        reward: '称号：阿尔瓦电信首席股东喵',
-        check: () => driedFish >= 500,
-        progress: () => `${Math.min(driedFish, 500)}/500`
-      },
-      {
-        id: 'fish_1500',
-        icon: '👑🐟',
-        name: '黄金鱼仓之主',
-        desc: '小鱼干余额突破 1500 条，整条莱顿运河都是你的小鱼塘！',
-        reward: '至高称号：北海鱼干财阀',
-        check: () => driedFish >= 1500,
-        progress: () => `${Math.min(driedFish, 1500)}/1500`
-      },
-      // ===== 🐾 赫尔曼挨挠层层递进六档位（严苛进阶 + 520/1314浪漫彩蛋） =====
-      {
-        id: 'hit_herman_100',
-        icon: '🍪',
-        name: '随身针线包',
-        desc: '累计挠中赫尔曼 100 爪，不仅逼得他带针线包，还从他兜里抖落了一盒曲奇',
-        reward: '获得：【🍪 赫尔曼的救急黄油曲奇】',
-        check: () => hermanHitTotal >= 100,
-        progress: () => `${Math.min(hermanHitTotal, 100)}/100爪`
-      },
-      {
-        id: 'hit_herman_350',
-        icon: '🍮',
-        name: '备用马甲第六件',
-        desc: '累计挠中赫尔曼 350 爪，他认命地从公文包里掏出甜品向你进贡',
-        reward: '获得：【🍮 塞曼先生的焦糖奶油冻】',
-        check: () => hermanHitTotal >= 350,
-        progress: () => `${Math.min(hermanHitTotal, 350)}/350爪`
-      },
-      {
-        id: 'hit_herman_520',
-        icon: '💘',
-        hidden: true,
-        name: '是爱你的形状喵',
-        desc: '累计挠中赫尔曼 520 爪——仔细一看，他深红马甲上被猫抓出的破洞居然拼成了一个标准的心形喵～',
-        reward: '称号：灵魂心形裁缝喵',
-        check: () => hermanHitTotal >= 520,
-        progress: () => `${Math.min(hermanHitTotal, 520)}/520爪`
-      },
-      {
-        id: 'hit_herman_800',
-        icon: '🔔',
-        name: '巴普洛夫的认命',
-        desc: '累计挠中赫尔曼 800 爪，他已经熟练地从长椅下抽出第三块猫抓板',
-        reward: '称号：赫尔曼先生的习惯性妥协',
-        check: () => hermanHitTotal >= 800,
-        progress: () => `${Math.min(hermanHitTotal, 800)}/800爪`
-      },
-      {
-        id: 'hit_herman_1314',
-        icon: '🧶',
-        hidden: true,
-        name: '一辈子锁死在长椅上',
-        desc: '累计挠中赫尔曼 1314 爪——打是亲骂是爱，照小猫这个挠法，赫尔曼这辈子都别想活着站起这条长椅了喵！',
-        reward: '称号：一生一世的冤家债主',
-        check: () => hermanHitTotal >= 1314,
-        progress: () => `${Math.min(hermanHitTotal, 1314)}/1314爪`
-      },
-      {
-        id: 'hit_herman_2000',
-        icon: '🛋️',
-        name: '长椅上的自家人',
-        desc: '累计挠中赫尔曼 2000 爪——他把被挠坏的衣服全留在阁楼，等你来坐坐',
-        reward: '至高称号：赫尔曼认命的编外家人',
-        check: () => hermanHitTotal >= 2000,
-        progress: () => `${Math.min(hermanHitTotal, 2000)}/2000爪`
-      },
-      // ===== 🍂 四季十二节气与雪地脚印系列（全部设为隐藏成就，手帐不显示获取条件） =====
       {
         id: 'season_4',
         icon: '🌿',
@@ -7061,14 +7058,16 @@ let catAction = 'idle';
       const gotCount = got.filter(x => x.got).length;
       const unlockedAchs = got.filter(x => x.got).map(x => x.ach);
       const unlockedHiddenCount = unlockedAchs.filter(a => a.hidden).length;
+      const veiledCount = got.filter(x => !x.got && x.ach.hidden).length;
 
-      // 3 列紧凑徽章网格：仅展示已完成的成就，自适应高度不留多余空白
+      // 3 列紧凑徽章网格：每行 3 个，再多成就也能自适应长图完整展示！
       const COLS = 3;
       const rows = Math.max(1, Math.ceil(unlockedAchs.length / COLS));
       const rowH = 38;
-      const listStartY = 616;
-      const listEndY = unlockedAchs.length === 0 ? (listStartY + 48) : (listStartY + rows * rowH);
-      const footerLineY = Math.max(720, listEndY + 24);
+      const listStartY = 622;
+      const listEndY = unlockedAchs.length === 0 ? (listStartY + 54) : (listStartY + rows * rowH);
+      const veiledY = veiledCount > 0 ? (listEndY + 22) : listEndY;
+      const footerLineY = Math.max(880, veiledY + 26);
       const W = 720;
       const H = footerLineY + 118;
 
@@ -7171,7 +7170,7 @@ let catAction = 'idle';
         ['🧇', '投喂华夫饼', fmt(totalWaffleCount)],
         ['💗', '阿尔瓦贴贴', fmt(totalNuzzleCount)],
         ['👣', '漫步里程', fmt(Math.floor(totalWalkDist))],
-        ['🏆', '已获成就', fmt(gotCount) + ' 项']
+        ['🏆', '成就达成', gotCount + ' / ' + achievementsList.length]
       ];
       const gx = 284, gy = 336, gw = 180, gh = 45, gapX = 16, gapY = 8;
       cells.forEach((cell, i) => {
@@ -7190,21 +7189,35 @@ let catAction = 'idle';
         c.textAlign = 'left';
       });
 
-      // —— 已达成成就展示（只显示已完成的成就，不剧透未解锁/隐藏项） ——
+      // —— 成就清单（3 列自适应网格，完整展示全部已解锁成就） ——
       c.fillStyle = '#c9a227';
       c.font = 'bold 21px ' + SHARE_FONT;
-      c.fillText('🏆 已达成的荣耀成就', 60, 594);
+      c.fillText('🏆 漫步荣耀成就全览', 60, 594);
       c.font = '15px ' + SHARE_FONT;
       c.fillStyle = '#a89a88';
       c.textAlign = 'right';
       const hiddenTag = unlockedHiddenCount > 0 ? `（含 ${unlockedHiddenCount} 项隐藏彩蛋✨）` : '';
-      c.fillText(`共达成 ${gotCount} 项${hiddenTag}`, W - 60, 594);
+      c.fillText(`已点亮 ${gotCount} / ${achievementsList.length} 项${hiddenTag}`, W - 60, 594);
       c.textAlign = 'left';
+
+      // 进度条
+      c.fillStyle = 'rgba(255,255,255,0.06)';
+      shareRoundRect(c, 60, 604, W - 120, 6, 3);
+      c.fill();
+      if (gotCount > 0) {
+        const pw = Math.max(8, Math.round((W - 120) * (gotCount / achievementsList.length)));
+        const pgrad = c.createLinearGradient(60, 0, 60 + pw, 0);
+        pgrad.addColorStop(0, '#c9a227');
+        pgrad.addColorStop(1, '#f4d068');
+        c.fillStyle = pgrad;
+        shareRoundRect(c, 60, 604, pw, 6, 3);
+        c.fill();
+      }
 
       if (unlockedAchs.length === 0) {
         c.fillStyle = '#7d736a';
         c.font = '16px ' + SHARE_FONT;
-        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, listStartY + 24);
+        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, listStartY + 26);
       } else {
         const badgeW = 192, badgeH = 31, badgeGapX = 12;
         unlockedAchs.forEach((a, i) => {
@@ -7233,6 +7246,12 @@ let catAction = 'idle';
           if (title !== a.name) title += '…';
           c.fillText(title, x + 36, y + 21);
         });
+      }
+
+      if (veiledCount > 0) {
+        c.fillStyle = '#7b7064';
+        c.font = '14px ' + SHARE_FONT;
+        c.fillText(`🔒 运河深处另有 ${veiledCount} 项隐藏成就等待小猫探索发现…`, 60, veiledY);
       }
 
       // —— 页脚 ——
