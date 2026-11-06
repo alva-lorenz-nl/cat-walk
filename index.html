@@ -6051,8 +6051,13 @@ let catAction = 'idle';
         lockTip: '初次击倒长椅上的赫尔曼解锁',
         actionLabel: '擦擦肉垫',
         onUse: () => {
-          showDialog('小猫拿出赫尔曼的白手帕，矜持地把两只粉白小肉垫擦得干干净净～✨');
-          catMeow();
+          SFX.meow();
+          catAction = 'meow';
+          catActionTimer = 36;
+          catBubble.text = '擦擦爪爪✨';
+          catBubble.timer = 110;
+          alva.heartTimer = 25;
+          showDialog('【擦擦肉垫～🏳️】小猫拿出赫尔曼投降的白手帕，矜持地把两只粉白小肉垫擦得干干净净～长椅上的赫尔曼眼角直抽：『喂，那块手帕我还没洗呢！』✨');
         }
       },
       {
@@ -6163,21 +6168,34 @@ let catAction = 'idle';
       } catch (e) {}
     }
 
-    // 穿戴/卸下切换
+    // 穿戴/卸下切换（自动收起手帐弹窗，让玩家直接看到小猫换装特效与台词）
     window.toggleEquip = function(itemId, slot) {
-      if (userEquipment[slot] === itemId) {
-        userEquipment[slot] = null;
-        saveUserEquipment();
-        renderInventoryUI();
-        const item = inventoryItems.find(it => it.id === itemId);
+      const isRemoving = (userEquipment[slot] === itemId);
+      userEquipment[slot] = isRemoving ? null : itemId;
+      saveUserEquipment();
+      renderInventoryUI();
+
+      // 先收起手帐弹窗，回到运河画面展示小猫的新装扮与台词
+      if (typeof closeStatsModal === 'function' && statsModal && statsModal.classList.contains('active')) {
+        closeStatsModal();
+      }
+
+      const item = inventoryItems.find(it => it.id === itemId);
+      spawnSkinSmoke(cat.x, cat.y, 18, 12);
+      if (isRemoving) {
+        SFX.tick(-1);
+        catBubble.text = '收好啦～🎒';
+        catBubble.timer = 95;
         showDialog(`【装扮衣橱】小猫把『${item ? item.name : '装扮'}』轻轻摘下，整齐收进衣橱啦。`);
       } else {
-        userEquipment[slot] = itemId;
-        saveUserEquipment();
-        renderInventoryUI();
-        const item = inventoryItems.find(it => it.id === itemId);
-        showDialog(`【装扮衣橱】小猫戴上了『${item ? item.name : '装扮'}』！整只猫神采奕奕～✨`);
+        SFX.unlock();
+        SFX.purr();
+        alva.heartTimer = 28;
+        catBubble.text = (item ? item.icon : '✨') + ' 好看喵！';
+        catBubble.timer = 110;
+        showDialog(`【装扮衣橱】噗——轻烟散开，小猫戴上了『${item ? item.name : '装扮'}』！整只猫在运河畔神采奕奕～✨`);
       }
+
       if (!equipBothFlag && userEquipment.head && userEquipment.neck) {
         equipBothFlag = true;
         try { localStorage.setItem('cat_equip_both', '1'); } catch (e) {}
@@ -6185,12 +6203,15 @@ let catAction = 'idle';
       }
     };
 
-    // 使用道具/点心
+    // 使用道具/点心（自动收起手帐弹窗，让玩家直接看到小猫吃点心/擦爪爪的反应与台词）
     window.useInventoryItem = function(itemId) {
       const item = inventoryItems.find(it => it.id === itemId);
-      if (item && typeof item.onUse === 'function') {
-        item.onUse();
+      if (!item || typeof item.onUse !== 'function') return;
+      if (typeof closeStatsModal === 'function' && statsModal && statsModal.classList.contains('active')) {
+        closeStatsModal();
       }
+      spawnSkinSmoke(cat.x, cat.y, 12, 8);
+      item.onUse();
     };
 
     // 渲染道具与衣橱 UI
