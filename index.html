@@ -5149,6 +5149,7 @@ let catAction = 'idle';
 
     // 小猫战绩统计（本地存储持久化）
     let totalMeowCount = parseInt(localStorage.getItem('cat_meow_count') || '0', 10);
+    let midnightMeowCount = parseInt(localStorage.getItem('cat_midnight_meow_count') || '0', 10);
     let totalKoCount = parseInt(localStorage.getItem('cat_ko_count') || '0', 10);
     let totalBossKoCount = parseInt(localStorage.getItem('cat_boss_ko_count') || '0', 10);
     let totalDiamondKoCount = parseInt(localStorage.getItem('cat_diamond_ko_count') || '0', 10);
@@ -5189,9 +5190,15 @@ let catAction = 'idle';
     let equipBothFlag = localStorage.getItem('cat_equip_both') === '1';
     let walkSaveTick = 0;
 
+    function getGameHourNow() {
+      const now = new Date();
+      const realH = now.getHours() + now.getMinutes() / 60;
+      return mod24(realH + timeOffsetHours);
+    }
+
     function touchNightTime() {
       if (nightWalkFlag) return;
-      const h = new Date().getHours();
+      const h = getGameHourNow();
       if (h >= 22 || h < 5) {
         nightWalkFlag = true;
         try { localStorage.setItem('cat_night_flag', '1'); } catch (e) {}
@@ -5314,6 +5321,26 @@ let catAction = 'idle';
         reward: '称号：莱顿运河首席喵唱家',
         check: () => totalMeowCount >= 100,
         progress: () => `${Math.min(totalMeowCount, 100)}/100`
+      },
+      {
+        id: 'midnight_meow_15',
+        icon: '🌙🎶',
+        hidden: true,
+        name: '午夜运河小夜曲',
+        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 15 声——赫尔曼顶着黑眼圈合上论文，阿尔瓦披着大衣出来哄你',
+        reward: '称号：熬夜实验室的催眠曲',
+        check: () => midnightMeowCount >= 15,
+        progress: () => `${Math.min(midnightMeowCount, 15)}/15声`
+      },
+      {
+        id: 'midnight_meow_50',
+        icon: '🦉🔔',
+        hidden: true,
+        name: '莱顿午夜打更喵',
+        desc: '在深夜至凌晨（23:00～04:00）累计喵喵叫 50 声——整条运河的宿鸟、路灯和两位未来科学家都被你叫精神了喵！',
+        reward: '至高称号：午夜交响乐指挥家',
+        check: () => midnightMeowCount >= 50,
+        progress: () => `${Math.min(midnightMeowCount, 50)}/50声`
       },
       {
         id: 'ko_20',
@@ -6189,17 +6216,51 @@ let catAction = 'idle';
       });
     }
 
+    // 🌙 午夜专属喵喵叫与深夜阿尔瓦/赫尔曼特殊回应台词池（23:00 ~ 04:00 触发）
+    const midnightMeowDialogues = [
+      "【🌙 午夜喵呜~】夜深人静的运河水面上荡开一圈喵音。赫尔曼揉着太阳穴从论文堆里抬起头：『……小猫崽子，现在是凌晨！你和阿尔瓦商量好轮流来吵我的是不是？』",
+      "【🌙 深夜开嗓！】小猫对着水中月亮亮嗓子喵了一声！阿尔瓦连忙蹲下身，把温热的掌心拢在你耳侧轻声哄道：『嘘……小雪球乖，对岸宿舍的同学们都睡了，我们小声一点好不好？』",
+      "【🌙 夜猫子值班喵！】赫尔曼打了个大大的哈欠，把大衣领口往上拉了拉：『第几声了？再叫下去，莱顿大学钟楼的猫头鹰都要下来拜你当大哥了。……过来，长椅给你分一半。』",
+      "【🌙 喵呜——！】清脆的猫叫在午夜石阶上回荡。阿尔瓦无奈又宠溺地摇摇头，从保温杯里倒了一小盖温牛奶递到你嘴边：『是不是肚子饿了才睡不着？喝一点暖暖胃，别把嗓子叫哑了。』",
+      "【🌙 深夜巡河喵！】赫尔曼盯着手里的怀表，镜片映着夜色：『很好，精神头比我熬夜写永动轮核心算法时还足。阿尔瓦，管管你家这位午夜歌唱家！』",
+      "【🌙 咕噜喵~】阿尔瓦借着昏黄的路灯光替你顺了顺沾着夜露的背毛，轻声笑道：『赫尔曼嘴上嫌你吵，其实刚才自己算题快睡着了，全靠你这一嗓子把他叫醒呢。』",
+      "【🌙 喵喵夜曲！】赫尔曼把钢笔一搁，认命地从兜里摸出半块夜宵黄油饼干晃了晃：『行了行了，怕了你了。吃了这块饼干就去阿尔瓦怀里睡觉，明早我还得早起去实验室。』",
+      "【🌙 望月长喵~】小猫仰头冲着漫天星河连喵两声。阿尔瓦与长椅上的赫尔曼对视一眼，夜风里两人都不自觉地放柔了目光：『……有这小家伙陪着熬夜，今晚倒也不算冷清。』"
+    ];
+    let midnightMeowIdx = 0;
+
     function catMeow() {
       SFX.meow();
       catAction = 'meow';
       catActionTimer = 36;
       totalMeowCount++;
       try { localStorage.setItem('cat_meow_count', totalMeowCount); } catch (e) {}
+
+      const gh = getGameHourNow();
+      const isMidnight = (gh >= 23 || gh < 4);
+      if (isMidnight) {
+        midnightMeowCount++;
+        try { localStorage.setItem('cat_midnight_meow_count', midnightMeowCount); } catch (e) {}
+        touchNightTime();
+      }
+
       updateStatsUI(true, false);
       gainFish(1);
 
       const distAlva = Math.abs(cat.x - alva.x);
       let meowText = '';
+
+      if (isMidnight && !ventMode) {
+        const line = midnightMeowDialogues[midnightMeowIdx % midnightMeowDialogues.length];
+        midnightMeowIdx++;
+        if (distAlva < 45) alva.heartTimer = 25;
+        else alva.sighTimer = 45;
+        catBubble.text = '🌙 喵呜~🎵';
+        catBubble.timer = 120;
+        showDialog(line);
+        checkAchievements();
+        return;
+      }
 
       if (distAlva < 38) {
         alva.heartTimer = 25;
