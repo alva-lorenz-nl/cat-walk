@@ -1258,6 +1258,85 @@
       margin: 0 0 12px;
     }
     .stats-modal-btn-row .stats-modal-btn-close { flex: 1; width: auto; margin: 0; }
+    .stats-modal-btn-reset {
+      padding: 11px 16px;
+      background: linear-gradient(180deg, #4b2323, #331616);
+      border: 1.5px solid #8c4242;
+      border-radius: 10px;
+      color: #f6c8c8;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: filter .15s, transform .1s;
+    }
+    .stats-modal-btn-reset:hover { filter: brightness(1.18); border-color: #c95b5b; }
+    .stats-modal-btn-reset:active { transform: translateY(1px); }
+
+    /* 防误触：清空缓存重玩确认弹窗 */
+    .reset-confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 6, 4, 0.86);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 1500;
+    }
+    .reset-confirm-overlay.active { display: flex; }
+    .reset-confirm-card {
+      width: min(370px, 92vw);
+      background: linear-gradient(180deg, #2a1e18, #1c1410);
+      border: 2px solid #9e4b4b;
+      border-radius: 16px;
+      padding: 20px 20px 18px;
+      box-shadow: 0 20px 55px rgba(0, 0, 0, 0.78);
+      text-align: center;
+    }
+    .reset-confirm-icon { font-size: 36px; margin-bottom: 6px; }
+    .reset-confirm-title {
+      color: #ffd6d6;
+      font-size: 17px;
+      font-weight: 800;
+      letter-spacing: 0.8px;
+      margin-bottom: 10px;
+    }
+    .reset-confirm-desc {
+      color: #cbbba8;
+      font-size: 13px;
+      line-height: 1.65;
+      margin-bottom: 18px;
+      text-align: left;
+      background: rgba(0, 0, 0, 0.28);
+      padding: 10px 12px;
+      border-radius: 9px;
+      border: 1px solid rgba(158, 75, 75, 0.28);
+    }
+    .reset-confirm-actions {
+      display: flex;
+      gap: 10px;
+    }
+    .reset-confirm-actions button {
+      flex: 1;
+      padding: 10px 10px;
+      border-radius: 9px;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: filter .15s;
+    }
+    .btn-reset-cancel {
+      background: #2f261f;
+      border: 1.5px solid #6b5745;
+      color: #eedcc5;
+    }
+    .btn-reset-confirm {
+      background: linear-gradient(180deg, #993333, #6e1f1f);
+      border: 1.5px solid #d46565;
+      color: #fff0f0;
+    }
+    .reset-confirm-actions button:hover { filter: brightness(1.15); }
     .stats-modal-btn-share {
       flex: 1;
       padding: 11px 12px;
@@ -1336,12 +1415,15 @@
     .share-preview {
       margin: 12px 0;
       border-radius: 12px;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
+      max-height: 58vh;
       background: #191310;
-      display: flex;
-      justify-content: center;
+      display: block;
       border: 1px solid #3a2d24;
     }
+    .share-preview::-webkit-scrollbar { width: 6px; }
+    .share-preview::-webkit-scrollbar-thumb { background: #5a4634; border-radius: 4px; }
     .share-preview canvas { width: 100%; height: auto; display: block; }
     .share-actions { display: flex; gap: 9px; }
     .share-actions button {
@@ -1455,6 +1537,7 @@
           “长椅上的赫尔曼今天也在叹气呢……不过别担心，小鱼干和华夫饼我都给你备好了。”
         </div>
         <div class="stats-modal-btn-row">
+          <button class="stats-modal-btn-reset" id="btnResetCache" title="清空全部战绩、成就与道具缓存，从头开始重玩">🗑️ 清空存档重玩</button>
           <button class="stats-modal-btn-close" id="btnConfirmClose">收起手帐</button>
         </div>
       </div>
@@ -1476,6 +1559,21 @@
         <button id="btnShareCopy">📋 复制图片</button>
       </div>
       <div class="share-tip">手机上也行，长按上面的预览图就能直接保存或转发给朋友。</div>
+    </div>
+  </div>
+
+  <!-- 🗑️ 防手滑：清空缓存重玩二次确认弹窗 -->
+  <div class="reset-confirm-overlay" id="resetConfirmOverlay">
+    <div class="reset-confirm-card">
+      <div class="reset-confirm-icon">🐾⚠️</div>
+      <div class="reset-confirm-title">确定要清空存档重新开始吗？</div>
+      <div class="reset-confirm-desc">
+        清空后，小猫当前的<b>全部 54 档成就进度、击倒赫尔曼战绩、小鱼干余额、衣橱装扮与时间拨盘记录</b>都会归零，恢复到初次踏入莱顿运河畔的状态喵！<br><span style="color:#eb9898;font-size:12px;">（此操作不可撤销，请确认没有手滑哦～）</span>
+      </div>
+      <div class="reset-confirm-actions">
+        <button class="btn-reset-cancel" id="btnCancelReset">先不清空</button>
+        <button class="btn-reset-confirm" id="btnConfirmReset">确认清空重玩</button>
+      </div>
     </div>
   </div>
 
@@ -6210,6 +6308,40 @@ let catAction = 'idle';
     });
     if (btnCloseStats) btnCloseStats.addEventListener('click', closeStatsModal);
     if (btnConfirmClose) btnConfirmClose.addEventListener('click', closeStatsModal);
+
+    // 🗑️ 清空缓存重玩（带二次确认弹窗防手滑）
+    const btnResetCache = document.getElementById('btnResetCache');
+    const resetConfirmOverlay = document.getElementById('resetConfirmOverlay');
+    const btnCancelReset = document.getElementById('btnCancelReset');
+    const btnConfirmReset = document.getElementById('btnConfirmReset');
+
+    if (btnResetCache && resetConfirmOverlay) {
+      btnResetCache.addEventListener('click', () => {
+        SFX.tick(-1);
+        resetConfirmOverlay.classList.add('active');
+      });
+      if (btnCancelReset) {
+        btnCancelReset.addEventListener('click', () => {
+          resetConfirmOverlay.classList.remove('active');
+        });
+      }
+      resetConfirmOverlay.addEventListener('click', (e) => {
+        if (e.target === resetConfirmOverlay) resetConfirmOverlay.classList.remove('active');
+      });
+      if (btnConfirmReset) {
+        btnConfirmReset.addEventListener('click', () => {
+          try {
+            const keysToRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && k.startsWith('cat_')) keysToRemove.push(k);
+            }
+            keysToRemove.forEach(k => localStorage.removeItem(k));
+          } catch (e) {}
+          location.reload();
+        });
+      }
+    }
     if (statsModal) {
       statsModal.addEventListener('click', (e) => {
         if (e.target === statsModal) closeStatsModal();
@@ -6904,8 +7036,27 @@ let catAction = 'idle';
 
     function drawShareCard() {
       if (!shareCanvasEl) return;
+      const got = shareAchState();
+      const gotCount = got.filter(x => x.got).length;
+      const unlockedAchs = got.filter(x => x.got).map(x => x.ach);
+      const unlockedHiddenCount = unlockedAchs.filter(a => a.hidden).length;
+      const veiledCount = got.filter(x => !x.got && x.ach.hidden).length;
+
+      // 3 列紧凑徽章网格：每行 3 个，再多成就也能自适应长图完整展示！
+      const COLS = 3;
+      const rows = Math.max(1, Math.ceil(unlockedAchs.length / COLS));
+      const rowH = 38;
+      const listStartY = 622;
+      const listEndY = unlockedAchs.length === 0 ? (listStartY + 54) : (listStartY + rows * rowH);
+      const veiledY = veiledCount > 0 ? (listEndY + 22) : listEndY;
+      const footerLineY = Math.max(880, veiledY + 26);
+      const W = 720;
+      const H = footerLineY + 118;
+
+      if (shareCanvasEl.width !== W) shareCanvasEl.width = W;
+      if (shareCanvasEl.height !== H) shareCanvasEl.height = H;
+
       const c = shareCanvasEl.getContext('2d');
-      const W = shareCanvasEl.width, H = shareCanvasEl.height;
       c.clearRect(0, 0, W, H);
       c.imageSmoothingEnabled = false;
       c.textBaseline = 'alphabetic';
@@ -6937,155 +7088,174 @@ let catAction = 'idle';
       // —— 页眉 ——
       c.fillStyle = '#c9a227';
       c.font = '600 19px ' + SHARE_FONT;
-      shareSpacedText(c, 'LEIDEN CANAL · AUTUMN', W / 2, 96, 5);
+      const seasonEn = (typeof currentSeasonInfo === 'function' ? currentSeasonInfo().season.en : 'AUTUMN');
+      shareSpacedText(c, 'LEIDEN CANAL · ' + seasonEn, W / 2, 92, 5);
 
       c.fillStyle = '#f4e5c8';
-      c.font = 'bold 52px ' + SHARE_FONT;
+      c.font = 'bold 50px ' + SHARE_FONT;
       c.textAlign = 'center';
-      c.fillText('小猫漫步手帐', W / 2, 164);
+      c.fillText('小猫漫步手帐', W / 2, 158);
 
       c.fillStyle = '#a49e97';
-      c.font = '19px ' + SHARE_FONT;
-      c.fillText('运河畔的秋日战绩 · 与长椅上那位先生的若干次交手', W / 2, 200);
+      c.font = '18px ' + SHARE_FONT;
+      c.fillText('莱顿运河畔的四季足迹 · 阿尔瓦与长椅上那位先生的陪伴记录', W / 2, 194);
       c.textAlign = 'left';
 
       // —— 署名牌 ——
       c.fillStyle = 'rgba(255,255,255,0.045)';
-      shareRoundRect(c, 60, 230, W - 120, 92, 16);
+      shareRoundRect(c, 60, 222, W - 120, 90, 16);
       c.fill();
       c.strokeStyle = 'rgba(201,162,39,0.32)';
       c.lineWidth = 1.5;
-      shareRoundRect(c, 60, 230, W - 120, 92, 16);
+      shareRoundRect(c, 60, 222, W - 120, 90, 16);
       c.stroke();
 
       c.fillStyle = '#9c948b';
-      c.font = '15px ' + SHARE_FONT;
-      c.fillText('漫 步 者', 88, 262);
+      c.font = '14px ' + SHARE_FONT;
+      c.fillText('漫 步 者', 88, 252);
       c.fillStyle = '#f6e7c9';
-      c.font = 'bold 34px ' + SHARE_FONT;
+      c.font = 'bold 32px ' + SHARE_FONT;
       let nm = getShareName();
-      while (c.measureText(nm).width > W - 240 && nm.length > 1) nm = nm.slice(0, -1);
-      c.fillText(nm, 88, 302);
+      while (c.measureText(nm).width > W - 260 && nm.length > 1) nm = nm.slice(0, -1);
+      c.fillText(nm, 88, 292);
       c.textAlign = 'right';
+      c.fillStyle = '#d4b46a';
+      c.font = '15px ' + SHARE_FONT;
+      const curSkinObj = CAT_SKINS.find(s => s.id === currentSkinId) || CAT_SKINS[0];
+      c.fillText('🐱 ' + curSkinObj.name + ' · 🐟 ' + driedFish + ' 小鱼干', W - 88, 260);
       c.fillStyle = '#8c8379';
-      c.font = '16px ' + SHARE_FONT;
-      c.fillText('🐾 莱顿运河', W - 88, 300);
+      c.font = '14px ' + SHARE_FONT;
+      c.fillText('🐾 累计挥爪 ' + hermanHitTotal + ' 次', W - 88, 290);
       c.textAlign = 'left';
 
       // —— 小猫立绘 ——
       c.fillStyle = 'rgba(255,255,255,0.035)';
-      shareRoundRect(c, 60, 348, 200, 200, 18);
+      shareRoundRect(c, 60, 336, 200, 206, 18);
       c.fill();
       c.strokeStyle = 'rgba(201,162,39,0.2)';
       c.lineWidth = 1;
-      shareRoundRect(c, 60, 348, 200, 200, 18);
+      shareRoundRect(c, 60, 336, 200, 206, 18);
       c.stroke();
 
       const skinImg = (skinCache[currentSkinId] && skinCache[currentSkinId].complete) ? skinCache[currentSkinId] : catSprite;
       if (skinImg && skinImg.complete && skinImg.naturalWidth > 0) {
-        c.drawImage(skinImg, 0, 28 * 32, 32, 32, 60 + 36, 348 + 36, 128, 128);
+        c.drawImage(skinImg, 0, 28 * 32, 32, 32, 60 + 36, 336 + 38, 128, 128);
       }
 
       // —— 战绩格子 ——
-      const got = shareAchState();
-      const gotCount = got.filter(x => x.got).length;
       const fmt = n => Number(n || 0).toLocaleString('en-US');
       const cells = [
         ['💬', '喵喵叫唤', fmt(totalMeowCount)],
         ['🐾', '击倒赫尔曼', fmt(totalKoCount)],
         ['👑', '黄金赫尔曼', fmt(totalBossKoCount)],
         ['💎', '钻石赫尔曼', fmt(totalDiamondKoCount)],
-        ['🧇', '吃到华夫饼', fmt(totalWaffleCount)],
-        ['🐱', '被摸摸头', fmt(totalNuzzleCount)],
-        ['👣', '漫步步数', fmt(Math.floor(totalWalkDist))],
-        ['🏆', '成就收集', gotCount + ' / ' + achievementsList.length]
+        ['🧇', '投喂华夫饼', fmt(totalWaffleCount)],
+        ['💗', '阿尔瓦贴贴', fmt(totalNuzzleCount)],
+        ['👣', '漫步里程', fmt(Math.floor(totalWalkDist))],
+        ['🏆', '成就达成', gotCount + ' / ' + achievementsList.length]
       ];
-      const gx = 288, gy = 348, gw = 178, gh = 44, gapX = 16, gapY = 8;
+      const gx = 284, gy = 336, gw = 180, gh = 45, gapX = 16, gapY = 8;
       cells.forEach((cell, i) => {
         const col = i % 2, row = Math.floor(i / 2);
         const x = gx + col * (gw + gapX), y = gy + row * (gh + gapY);
         c.fillStyle = 'rgba(255,255,255,0.04)';
         shareRoundRect(c, x, y, gw, gh, 10);
         c.fill();
-        c.font = '15px ' + SHARE_FONT;
+        c.font = '14px ' + SHARE_FONT;
         c.fillStyle = '#9c948b';
         c.fillText(cell[0] + ' ' + cell[1], x + 12, y + 18);
-        c.font = 'bold 21px ' + SHARE_FONT;
+        c.font = 'bold 20px ' + SHARE_FONT;
         c.fillStyle = '#f3e2c4';
         c.textAlign = 'right';
-        c.fillText(cell[2], x + gw - 12, y + 39);
+        c.fillText(cell[2], x + gw - 12, y + 38);
         c.textAlign = 'left';
       });
 
-      // —— 成就清单 ——
+      // —— 成就清单（3 列自适应网格，完整展示全部已解锁成就） ——
       c.fillStyle = '#c9a227';
-      c.font = 'bold 22px ' + SHARE_FONT;
-      c.fillText('🏆 漫步荣耀成就', 60, 602);
-      c.font = '17px ' + SHARE_FONT;
-      c.fillStyle = '#8c8379';
+      c.font = 'bold 21px ' + SHARE_FONT;
+      c.fillText('🏆 漫步荣耀成就全览', 60, 594);
+      c.font = '15px ' + SHARE_FONT;
+      c.fillStyle = '#a89a88';
       c.textAlign = 'right';
-      c.fillText(gotCount + ' / ' + achievementsList.length + ' 已达成', W - 60, 602);
+      const hiddenTag = unlockedHiddenCount > 0 ? `（含 ${unlockedHiddenCount} 项隐藏彩蛋✨）` : '';
+      c.fillText(`已点亮 ${gotCount} / ${achievementsList.length} 项${hiddenTag}`, W - 60, 594);
       c.textAlign = 'left';
 
-      const unlockedAchs = got.filter(x => x.got).map(x => x.ach);
-      const veiledCount = got.filter(x => !x.got && x.ach.hidden).length;
-      const maxShow = 10;
-      const showList = unlockedAchs.slice(0, maxShow);
-      const restCount = unlockedAchs.length - showList.length;
-
-      if (showList.length === 0) {
-        c.fillStyle = '#7d736a';
-        c.font = '17px ' + SHARE_FONT;
-        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, 648);
-      } else {
-        showList.forEach((a, i) => {
-          const col = i % 2, row = Math.floor(i / 2);
-          const x = 60 + col * 312, y = 618 + row * 42;
-          c.fillStyle = 'rgba(255,255,255,0.035)';
-          shareRoundRect(c, x, y, 288, 34, 9);
-          c.fill();
-          c.font = '16px ' + SHARE_FONT;
-          c.fillStyle = '#c9a227';
-          c.fillText(a.icon || '🏆', x + 10, y + 23);
-          c.fillStyle = '#e8dcc8';
-          c.font = '16px ' + SHARE_FONT;
-          let title = a.name;
-          while (c.measureText(title).width > 232 && title.length > 1) title = title.slice(0, -1) + '…';
-          c.fillText(title, x + 42, y + 23);
-        });
-        if (restCount > 0) {
-          c.fillStyle = '#8c8379';
-          c.font = '15px ' + SHARE_FONT;
-          const lastRow = Math.ceil(showList.length / 2);
-          c.fillText('还有 ' + restCount + ' 项成就没挤进这张图…', 60, 618 + lastRow * 42 + 4);
-        }
+      // 进度条
+      c.fillStyle = 'rgba(255,255,255,0.06)';
+      shareRoundRect(c, 60, 604, W - 120, 6, 3);
+      c.fill();
+      if (gotCount > 0) {
+        const pw = Math.max(8, Math.round((W - 120) * (gotCount / achievementsList.length)));
+        const pgrad = c.createLinearGradient(60, 0, 60 + pw, 0);
+        pgrad.addColorStop(0, '#c9a227');
+        pgrad.addColorStop(1, '#f4d068');
+        c.fillStyle = pgrad;
+        shareRoundRect(c, 60, 604, pw, 6, 3);
+        c.fill();
       }
+
+      if (unlockedAchs.length === 0) {
+        c.fillStyle = '#7d736a';
+        c.font = '16px ' + SHARE_FONT;
+        c.fillText('还没有解锁成就 —— 去运河边喵一声，或者挠一下长椅上的赫尔曼吧。', 60, listStartY + 26);
+      } else {
+        const badgeW = 192, badgeH = 31, badgeGapX = 12;
+        unlockedAchs.forEach((a, i) => {
+          const col = i % COLS, row = Math.floor(i / COLS);
+          const x = 60 + col * (badgeW + badgeGapX);
+          const y = listStartY + row * rowH;
+          const isHid = !!a.hidden;
+          c.fillStyle = isHid ? 'rgba(201,162,39,0.09)' : 'rgba(255,255,255,0.038)';
+          shareRoundRect(c, x, y, badgeW, badgeH, 8);
+          c.fill();
+          if (isHid) {
+            c.strokeStyle = 'rgba(201,162,39,0.35)';
+            c.lineWidth = 1;
+            shareRoundRect(c, x, y, badgeW, badgeH, 8);
+            c.stroke();
+          }
+          c.font = '14px ' + SHARE_FONT;
+          c.fillStyle = '#c9a227';
+          c.fillText(a.icon || '🏆', x + 8, y + 21);
+          c.fillStyle = isHid ? '#ffe6a3' : '#e8dcc8';
+          c.font = (isHid ? '600 ' : '') + '13.5px ' + SHARE_FONT;
+          let title = a.name;
+          while (c.measureText(title).width > (badgeW - 44) && title.length > 1) {
+            title = title.slice(0, -1);
+          }
+          if (title !== a.name) title += '…';
+          c.fillText(title, x + 36, y + 21);
+        });
+      }
+
       if (veiledCount > 0) {
-        c.fillStyle = '#6f665e';
-        c.font = '15px ' + SHARE_FONT;
-        c.fillText('另有 ' + veiledCount + ' 个隐藏成就等着被时间拨开。', 60, 856);
+        c.fillStyle = '#7b7064';
+        c.font = '14px ' + SHARE_FONT;
+        c.fillText(`🔒 运河深处另有 ${veiledCount} 项隐藏成就等待小猫探索发现…`, 60, veiledY);
       }
 
       // —— 页脚 ——
       c.strokeStyle = 'rgba(201,162,39,0.18)';
       c.lineWidth = 1;
       c.beginPath();
-      c.moveTo(60, 924);
-      c.lineTo(W - 60, 924);
+      c.moveTo(60, footerLineY);
+      c.lineTo(W - 60, footerLineY);
       c.stroke();
 
       const d = new Date();
       const pad = n => String(n).padStart(2, '0');
       const stamp = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
       c.fillStyle = '#8c8379';
-      c.font = '16px ' + SHARE_FONT;
-      c.fillText('生成于 ' + stamp, 60, 962);
+      c.font = '15px ' + SHARE_FONT;
+      c.fillText('生成于 ' + stamp, 60, footerLineY + 36);
       c.textAlign = 'right';
       c.fillStyle = '#a49e97';
-      c.fillText('莱顿运河畔的猫咪漫步', W - 60, 962);
+      c.fillText('莱顿运河畔 · 小猫漫步 (alva-lorenz.top)', W - 60, footerLineY + 36);
       c.fillStyle = '#c9a227';
-      c.font = '600 15px ' + SHARE_FONT;
-      c.fillText('ALVA LORENZ · 永动轮阁楼实验室', W - 60, 1002);
+      c.font = '600 14px ' + SHARE_FONT;
+      c.fillText('ALVA LORENZ · 永动轮阁楼实验室', W - 60, footerLineY + 72);
       c.textAlign = 'left';
     }
 
