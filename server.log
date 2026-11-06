@@ -3070,3 +3070,92 @@ Traceback (most recent call last):
     self._sock.sendall(b)
 BrokenPipeError: [Errno 32] Broken pipe
 ----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('216.218.206.68', 64950)
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/http/server.py", line 292, in parse_request
+    raise ValueError
+ValueError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/lib/python3.12/http/server.py", line 672, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/lib/python3.12/socketserver.py", line 761, in __init__
+    self.handle()
+  File "/usr/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/usr/lib/python3.12/http/server.py", line 414, in handle_one_request
+    if not self.parse_request():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/http/server.py", line 309, in parse_request
+    self.send_error(
+  File "/usr/lib/python3.12/http/server.py", line 488, in send_error
+    self.end_headers()
+  File "/data/games/cat-walk/serve_nocache.py", line 15, in end_headers
+    path = self.path.split("?")[0]
+           ^^^^^^^^^
+AttributeError: 'Handler' object has no attribute 'path'
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('216.218.206.68', 44228)
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/http/server.py", line 292, in parse_request
+    raise ValueError
+ValueError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/lib/python3.12/http/server.py", line 672, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/lib/python3.12/socketserver.py", line 761, in __init__
+    self.handle()
+  File "/usr/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/usr/lib/python3.12/http/server.py", line 414, in handle_one_request
+    if not self.parse_request():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/http/server.py", line 309, in parse_request
+    self.send_error(
+  File "/usr/lib/python3.12/http/server.py", line 488, in send_error
+    self.end_headers()
+  File "/data/games/cat-walk/serve_nocache.py", line 15, in end_headers
+    path = self.path.split("?")[0]
+           ^^^^^^^^^
+AttributeError: 'Handler' object has no attribute 'path'
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('216.218.206.68', 44232)
+Traceback (most recent call last):
+  File "/usr/lib/python3.12/socketserver.py", line 692, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/usr/lib/python3.12/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+  File "/usr/lib/python3.12/http/server.py", line 672, in __init__
+    super().__init__(*args, **kwargs)
+  File "/usr/lib/python3.12/socketserver.py", line 761, in __init__
+    self.handle()
+  File "/usr/lib/python3.12/http/server.py", line 436, in handle
+    self.handle_one_request()
+  File "/usr/lib/python3.12/http/server.py", line 414, in handle_one_request
+    if not self.parse_request():
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/http/server.py", line 323, in parse_request
+    self.send_error(
+  File "/usr/lib/python3.12/http/server.py", line 488, in send_error
+    self.end_headers()
+  File "/data/games/cat-walk/serve_nocache.py", line 15, in end_headers
+    path = self.path.split("?")[0]
+           ^^^^^^^^^
+AttributeError: 'Handler' object has no attribute 'path'
+----------------------------------------

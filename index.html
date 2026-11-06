@@ -2242,7 +2242,7 @@
     ];
     let diamondScratchIndex = 0;
 
-    // ── 赫尔曼的「挨挠记忆」：终身累计被挠次数越多，他说话就越不一样 ──
+    // ── 赫尔曼的「挨挠记忆」：累计被挠次数越多，他说话就越不一样 ──
     let hermanHitTotal = 0;
     try { hermanHitTotal = parseInt(localStorage.getItem('cat_herman_hit_total') || '0', 10) || 0; } catch (e) {}
     let hermanStageSeen = 0;
@@ -5542,7 +5542,7 @@ let catAction = 'idle';
         id: 'hit_herman_100',
         icon: '🍪',
         name: '随身针线包',
-        desc: '终身累计挠中赫尔曼 100 爪，不仅逼得他带针线包，还从他兜里抖落了一盒曲奇',
+        desc: '累计挠中赫尔曼 100 爪，不仅逼得他带针线包，还从他兜里抖落了一盒曲奇',
         reward: '获得：【🍪 赫尔曼的救急黄油曲奇】',
         check: () => hermanHitTotal >= 100,
         progress: () => `${Math.min(hermanHitTotal, 100)}/100爪`
@@ -5551,17 +5551,17 @@ let catAction = 'idle';
         id: 'hit_herman_350',
         icon: '🍮',
         name: '备用马甲第六件',
-        desc: '终身累计挠中赫尔曼 350 爪，他认命地从公文包里掏出甜品向你进贡',
+        desc: '累计挠中赫尔曼 350 爪，他认命地从公文包里掏出甜品向你进贡',
         reward: '获得：【🍮 塞曼先生的焦糖奶油冻】',
         check: () => hermanHitTotal >= 350,
         progress: () => `${Math.min(hermanHitTotal, 350)}/350爪`
       },
       {
         id: 'hit_herman_800',
-        icon: '🪵',
+        icon: '🔔',
         name: '巴甫洛夫的认命',
-        desc: '终身累计挠中赫尔曼 800 爪，他已经熟练地从长椅下抽出第三块猫抓板',
-        reward: '称号：塞曼教授的固定课题',
+        desc: '累计挠中赫尔曼 800 爪，他已经熟练地从长椅下抽出第三块猫抓板',
+        reward: '称号：赫尔曼先生的习惯性妥协',
         check: () => hermanHitTotal >= 800,
         progress: () => `${Math.min(hermanHitTotal, 800)}/800爪`
       },
@@ -5569,7 +5569,7 @@ let catAction = 'idle';
         id: 'hit_herman_2000',
         icon: '🛋️',
         name: '长椅上的自家人',
-        desc: '终身累计挠中赫尔曼 2000 爪——他把被挠坏的衣服全留在阁楼，等你来坐坐',
+        desc: '累计挠中赫尔曼 2000 爪——他把被挠坏的衣服全留在阁楼，等你来坐坐',
         reward: '至高称号：赫尔曼认命的编外家人',
         check: () => hermanHitTotal >= 2000,
         progress: () => `${Math.min(hermanHitTotal, 2000)}/2000爪`
