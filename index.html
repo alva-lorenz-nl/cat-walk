@@ -1703,6 +1703,30 @@
           noise(0.08, 'lowpass', 500, 300, 0.06, 0.06);
         },
 
+        // 小猫吃点心（华夫饼/南瓜饼/曲奇等）：咔嚓咔嚓三口 + 咕嘟咽下 + 幸福上扬小颤音
+        munch: function () {
+          const c = ensure();
+          if (!c) return;
+          [0, 0.16, 0.31].forEach(function (d, i) {
+            setTimeout(function () {
+              noise(0.09, 'bandpass', 1200 - i * 110, 520, 0.14, 0.075);
+              noise(0.07, 'lowpass', 620, 280, 0.09, 0.06);
+              tone(320 + i * 45, 0.055, 'triangle', 0.07, 190);
+            }, d * 1000);
+          });
+          // 咕嘟咽下一小口 + 满足的软萌尾音
+          tone(280, 0.09, 'sine', 0.09, 460, 0.48);
+          tone(660, 0.12, 'sine', 0.08, 880, 0.58);
+          tone(990, 0.18, 'triangle', 0.06, 1180, 0.68);
+        },
+
+        // 赫尔曼被揍爆出点心：清脆可爱的波普弹出音
+        snackDrop: function () {
+          tone(587, 0.08, 'triangle', 0.11, 784, 0);
+          tone(880, 0.11, 'sine', 0.10, 1174, 0.07);
+          tone(1318, 0.16, 'sine', 0.08, null, 0.14);
+        },
+
         // 复活/回血的圣光：上行小琶音
         sparkle: function () {
           tone(880, 0.16, 'sine', 0.1);
@@ -2049,6 +2073,7 @@
     let screenShake = 0;     // 屏幕震动强度
     let damagePopups = [];   // 飘字伤害
     let hitSparks = [];      // 打击碎屑火花
+    let snackDrops = [];     // 赫尔曼被揍时从兜里爆出来飞落的好吃的
 
     const COMBO_WINDOW = 72; // 1.2 秒内继续命中才算连击
 
@@ -2487,11 +2512,54 @@
       return scratchDialogues[scratchIndex++ % scratchDialogues.length];
     }
 
+    // 殴打赫尔曼爆点心池：每挠满 20 爪，就从他口袋/公文包里震落一份好吃的！
+    const HERMAN_SNACK_LOOT = [
+      { icon: '🍪', name: '荷兰黄油曲奇', fish: 5, line: '【🍪 爆出点心！】赫尔曼被你挠得一抖，马甲兜里骨碌碌滚出一块黄油曲奇：『等等！那是我留着下午配咖啡的——喂，别直接叼走啊！』' },
+      { icon: '🧇', name: '迷你焦糖煎饼', fish: 6, line: '【🧇 爆出点心！】一爪子拍在公文包上，里面掉出一小包莱顿焦糖煎饼！赫尔曼痛心疾首：『连夹层都被你拍开了？！』' },
+      { icon: '🍬', name: '奶油太妃糖', fish: 5, line: '【🍬 爆出点心！】赫尔曼招架不及，口袋里蹦出两颗奶油太妃糖！小猫一爪按住，满意地咪了一声～' },
+      { icon: '🐟', name: '特级小银鱼干', fish: 8, line: '【🐟 爆出点心！】从赫尔曼的大衣暗袋里居然掉出一包特级小银鱼干！阿尔瓦挑眉笑了笑：『赫尔曼，原来你背着我也偷偷买了猫零食？』' },
+      { icon: '🥨', name: '肉桂蝴蝶脆饼', fish: 6, line: '【🥨 爆出点心！】赫尔曼手忙脚乱护住眼镜，怀里的纸袋散开，掉出一块香喷喷的肉桂脆饼：『拿去吃！吃了这口能不能轻点挠？！』' },
+      { icon: '🧁', name: '香草奶油纸杯蛋糕', fish: 7, line: '【🧁 爆出点心！】小猫连环肉垫出击，从赫尔曼随身小盒里震出一只纸杯蛋糕！小猫凑上去舔了一口奶油，胡须都翘了起来～' }
+    ];
+
+    function triggerHermanSnackDrop(totalHitsNow) {
+      if (totalHitsNow <= 0 || totalHitsNow % 20 !== 0) return;
+      const item = HERMAN_SNACK_LOOT[(Math.floor(totalHitsNow / 20) - 1) % HERMAN_SNACK_LOOT.length];
+      SFX.snackDrop();
+      // 抛物线弹出 2~3 颗点心小图标落在长椅旁
+      for (let i = 0; i < 3; i++) {
+        snackDrops.push({
+          x: bench.x + 18 + (Math.random() - 0.5) * 6,
+          y: bench.y - 4,
+          vx: (i - 1) * 1.1 + (Math.random() - 0.5) * 0.5,
+          vy: -2.2 - Math.random() * 0.8,
+          icon: item.icon,
+          life: 68
+        });
+      }
+      // 飘一条亮金色的提示字
+      damagePopups.push({
+        x: bench.x + 18,
+        y: bench.y - 22,
+        vy: -0.7,
+        life: 52,
+        maxLife: 52,
+        text: `${item.icon}+${item.fish}🐟`,
+        color: '#ffd666',
+        crit: true
+      });
+      gainFish(item.fish);
+      setTimeout(() => {
+        showDialog(`${item.line}（🐟 +${item.fish} 小鱼干）`, { dwell: 4200 });
+      }, 350);
+    }
+
     // 记一次挨挠，返回跨阶段时的里程碑台词（没有则返回 null）
     function recordHermanHit() {
       hermanHitTotal++;
       updateFlavorText();
       try { localStorage.setItem('cat_herman_hit_total', hermanHitTotal); } catch (e) {}
+      triggerHermanSnackDrop(hermanHitTotal);
       const s = hermanStage();
       if (typeof checkAchievements === 'function') checkAchievements();
       if (s > hermanStageSeen) {
@@ -5472,19 +5540,19 @@ let catAction = 'idle';
       // ===== 🐾 赫尔曼挨挠层层递进四档位（严苛进阶） =====
       {
         id: 'hit_herman_100',
-        icon: '🧵',
+        icon: '🍪',
         name: '随身针线包',
-        desc: '终身累计挠中赫尔曼 100 爪，逼得他出门开始随身带针线包',
-        reward: '称号：马甲拆线工',
+        desc: '终身累计挠中赫尔曼 100 爪，不仅逼得他带针线包，还从他兜里抖落了一盒曲奇',
+        reward: '获得：【🍪 赫尔曼的救急黄油曲奇】',
         check: () => hermanHitTotal >= 100,
         progress: () => `${Math.min(hermanHitTotal, 100)}/100爪`
       },
       {
         id: 'hit_herman_350',
-        icon: '🧥',
+        icon: '🍮',
         name: '备用马甲第六件',
-        desc: '终身累计挠中赫尔曼 350 爪，裁缝店老板已经认识他了',
-        reward: '称号：莱顿裁缝铺贵人',
+        desc: '终身累计挠中赫尔曼 350 爪，他认命地从公文包里掏出甜品向你进贡',
+        reward: '获得：【🍮 塞曼先生的焦糖奶油冻】',
         check: () => hermanHitTotal >= 350,
         progress: () => `${Math.min(hermanHitTotal, 350)}/350爪`
       },
@@ -5768,10 +5836,66 @@ let catAction = 'idle';
         desc: '阿尔瓦刚烤好的焦糖华夫饼，温热甜润。小猫咬一口心情大好，赫尔曼闻到会眼巴巴看着。',
         checkUnlocked: () => totalKoCount >= 5 || unlockedAchSet.has('ko_5'),
         lockTip: '累计击倒赫尔曼 5 次解锁',
-        actionLabel: '嗷呜咬一口',
+        actionLabel: '🧇 嗷呜咬一口',
         onUse: () => {
-          showDialog('小猫嗷呜咬了一大口华夫饼！浓郁的焦糖与肉桂香气在嘴巴里化开，幸福得尾巴竖直～🧇💕');
-          catMeow();
+          SFX.munch();
+          alva.heartTimer = 30;
+          catBubble.text = '嗷呜～🧇';
+          catBubble.timer = 100;
+          showDialog('【咔嚓咔嚓～🧇】小猫嗷呜咬了一大口焦糖华夫饼！温热的焦糖与肉桂香气在舌尖化开，幸福得尾巴高高竖直～💕');
+        }
+      },
+      {
+        id: 'alva_pumpkin_pie',
+        slot: 'consumable',
+        icon: '🎃',
+        name: '阿尔瓦最喜欢的南瓜饼',
+        type: '点心 · 深秋限定秘方',
+        desc: '用老梧桐树根旁那只最甜的大南瓜烤出的金黄南瓜饼，外皮酥软、内馅绵密，是阿尔瓦最喜欢的甜点。',
+        checkUnlocked: () => pumpkinSniffFlag || unlockedAchSet.has('autumn_pumpkin'),
+        lockTip: '解锁隐藏成就「阿尔瓦的南瓜饼」后获得',
+        actionLabel: '🥧 嗷呜吃一口',
+        onUse: () => {
+          SFX.munch();
+          alva.heartTimer = 35;
+          catBubble.text = '好甜喵～🎃';
+          catBubble.timer = 100;
+          showDialog('【嗷呜嗷呜～🎃】小猫抱起温热的南瓜饼吃了一大口，香甜绵密的南瓜泥沾在胡须上！阿尔瓦含笑替你擦了擦嘴角：『慢点吃，锅里还给你留着呢。』✨');
+        }
+      },
+      {
+        id: 'herman_butter_cookie',
+        slot: 'consumable',
+        icon: '🍪',
+        name: '赫尔曼的救急黄油曲奇',
+        type: '点心 · 挨揍战利品',
+        desc: '把赫尔曼挠满 100 爪后从他马甲口袋里抖落出来的荷兰黄油曲奇——他原本揣着准备关键时刻贿赂你保住扣子的。',
+        checkUnlocked: () => hermanHitTotal >= 100 || unlockedAchSet.has('hit_herman_100'),
+        lockTip: '累计挠中赫尔曼 100 爪后从他兜里爆出',
+        actionLabel: '🍪 咔嚓吃掉',
+        onUse: () => {
+          SFX.munch();
+          catBubble.text = '咔嚓咔嚓🍪';
+          catBubble.timer = 100;
+          showDialog('【咔嚓咔嚓～🍪】小猫当着赫尔曼的面把他的救急黄油曲奇吃得掉渣！赫尔曼捂着胸口：『那是我的下午茶！……算了，吃了这块的猫，五分钟内不准挠袖口。』');
+        }
+      },
+      {
+        id: 'herman_caramel_pudding',
+        slot: 'consumable',
+        icon: '🍮',
+        name: '塞曼先生的焦糖奶油冻',
+        type: '点心 · 挨揍战利品',
+        desc: '累计挠满 350 爪后赫尔曼彻底认命、主动从公文包保冷层里掏出来进贡给你的高级甜品。',
+        checkUnlocked: () => hermanHitTotal >= 350 || unlockedAchSet.has('hit_herman_350'),
+        lockTip: '累计挠中赫尔曼 350 爪后进贡解锁',
+        actionLabel: '🍮 舔一口奶油',
+        onUse: () => {
+          SFX.munch();
+          alva.heartTimer = 25;
+          catBubble.text = '呼噜呼噜🍮';
+          catBubble.timer = 100;
+          showDialog('【吧唧吧唧～🍮】小猫满足地舔着冰凉滑嫩的焦糖奶油冻。赫尔曼推了推眼镜小声嘀咕：『莱顿甜品店排队半小时才买到的……喂，给我也留一勺行不行？』');
         }
       }
     ];
@@ -6122,6 +6246,20 @@ let catAction = 'idle';
         p.life--;
         if (p.life <= 0) damagePopups.splice(i, 1);
       }
+
+      for (let i = snackDrops.length - 1; i >= 0; i--) {
+        const d = snackDrops[i];
+        d.x += d.vx;
+        d.y += d.vy;
+        d.vy += 0.14;
+        if (d.y >= 133) {
+          d.y = 133;
+          d.vy = -Math.abs(d.vy) * 0.35;
+          d.vx *= 0.6;
+        }
+        d.life--;
+        if (d.life <= 0) snackDrops.splice(i, 1);
+      }
     }
 
     function drawCombatFx() {
@@ -6132,6 +6270,16 @@ let catAction = 'idle';
         ctx.globalAlpha = Math.min(1, s.life / 12);
         ctx.fillStyle = s.color;
         ctx.fillRect(Math.round(s.x), Math.round(s.y), s.size, s.size);
+      }
+      ctx.globalAlpha = 1;
+
+      // 赫尔曼爆出的点心小图标（抛物线掉在石阶上弹两下）
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '10px sans-serif';
+      for (const d of snackDrops) {
+        ctx.globalAlpha = Math.min(1, d.life / 14);
+        ctx.fillText(d.icon, Math.round(d.x), Math.round(d.y));
       }
       ctx.globalAlpha = 1;
 
@@ -6239,7 +6387,10 @@ let catAction = 'idle';
           ventDamage += damage;
           ventHits++;
           ventTotalHits++;
+          hermanHitTotal++;
+          try { localStorage.setItem('cat_herman_hit_total', hermanHitTotal); } catch (e) {}
           gainFish(1);
+          triggerHermanSnackDrop(hermanHitTotal);
           if (comboCount > ventMaxCombo) { ventMaxCombo = comboCount; saveNum('cat_vent_max_combo', ventMaxCombo); }
           if (ventDamage > ventMaxDamage) { ventMaxDamage = ventDamage; saveNum('cat_vent_max_damage', ventMaxDamage); }
           saveNum('cat_vent_total_hits', ventTotalHits);
