@@ -1768,6 +1768,18 @@
         // 时间拨动：轻响
         tick: function (dir) {
           tone(dir >= 0 ? 1200 : 900, 0.05, 'square', 0.035);
+        },
+
+        // 阿尔瓦惊讶（感叹号跳出）：短促清亮的双音
+        surprise: function () {
+          tone(740, 0.07, 'triangle', 0.08, 1046, 0);
+          tone(1174, 0.12, 'sine', 0.09, 1396, 0.07);
+        },
+
+        // 阿尔瓦无奈叹气（省略号气泡）：柔和下行的呼气声
+        sigh: function () {
+          noise(0.38, 'bandpass', 680, 320, 0.07, 0.34);
+          tone(523, 0.22, 'sine', 0.06, 392, 0.02);
         }
       };
     })();
@@ -2029,7 +2041,8 @@
       x: 95,
       y: 135,
       heartTimer: 0,
-      exclamationTimer: 0
+      exclamationTimer: 0,
+      sighTimer: 0
     };
 
     // 赫尔曼在长椅上（往下挪两格 y=116）
@@ -2908,7 +2921,15 @@
         checkAchievements();
       }
 
-      // 顶到极限（或已经卡在极限上）
+      // 已经卡在极限且警告过：小猫还不听话继续往外拨 → 先让数字显示那次越界点击成功，再演阿尔瓦惊讶→无奈→弹台词→慢速拉回！
+      if (timeLimitWarned && dir === timeLimitWarnDir && Math.abs(timeTargetHours) >= TIME_LIMIT_HOURS && clamped === timeTargetHours) {
+        const now = performance.now();
+        if (now - timeLimitWarnAt < timeLimitWarnDwell + 600) return;
+        forceTimeReset(wanted);
+        return;
+      }
+
+      // 顶到极限（首次到达 ±999 天）
       if (clamped !== wanted || Math.abs(timeTargetHours) >= TIME_LIMIT_HOURS) {
         handleTimeLimit(dir);
         return;
@@ -2953,19 +2974,53 @@
       refreshTimeUI();
     }
 
-    function forceTimeReset() {
+    function forceTimeReset(overshootHours) {
       timeLimitLocked = true;
       timeLimitWarned = false;
+      const dir = timeLimitWarnDir;
       timeLimitWarnDir = 0;
       stopPress();
-      alva.exclamationTimer = 80;
-      timeTargetHours = 0;
-      saveTimeState();
-      startTimeAnim();
-      refreshTimeUI();
-      showDialog("（阿尔瓦伸手把时针按回了原点，运河的水声重新落回此刻：『我说过的，小猫。时间不是玩具。』）", { dwell: 4400 });
-      pressLockUntil = performance.now() + (timeAnim ? timeAnim.dur : 0) + 4400;
-      setTimeout(() => { timeLimitLocked = false; refreshTimeUI(); }, (timeAnim ? timeAnim.dur : 0) + 800);
+
+      // 第一步（0ms）：数字先真实跳到那次点击的越界值（如 +1000天），让玩家看清自己的点击生效了！
+      const shownOvershoot = overshootHours !== undefined ? overshootHours : (dir >= 0 ? TIME_LIMIT_HOURS + 24 : -(TIME_LIMIT_HOURS + 24));
+      SFX.tick(dir);
+      timeOffsetHours = shownOvershoot;
+      timeTargetHours = shownOvershoot;
+      if (timeNowEl) {
+        timeNowEl.innerText = formatOffset(Math.round(shownOvershoot));
+        timeNowEl.style.color = '#ff6b6b';
+        timeNowEl.style.transform = 'scale(1.14)';
+        timeNowEl.style.transition = 'transform 0.2s ease';
+        setTimeout(() => { if (timeNowEl) timeNowEl.style.transform = ''; }, 240);
+      }
+
+      // 第二步（300ms）：阿尔瓦先惊讶（头顶跳出『!』感叹号）
+      setTimeout(() => {
+        SFX.surprise();
+        alva.sighTimer = 0;
+        alva.exclamationTimer = 50;
+      }, 300);
+
+      // 第三步（1150ms）：阿尔瓦转为无奈摇头叹气（头顶浮现『…💧』省略号汗滴气泡）
+      setTimeout(() => {
+        SFX.sigh();
+        alva.exclamationTimer = 0;
+        alva.sighTimer = 85;
+      }, 1150);
+
+      // 第四步（2350ms）：弹出阿尔瓦无奈的台词，同时把时间从越界数字缓慢、清晰地一路拉回现实（持续 2.4 秒）
+      setTimeout(() => {
+        showDialog("（阿尔瓦看着越界的时针先是一怔，随即无奈地叹了口气，伸手握住你的小爪子把时间一格格拨回原点：『……真是拿你没办法。我说过的，小猫，时间可不是毛线球。』）", { dwell: 5000 });
+        timeTargetHours = 0;
+        saveTimeState();
+        timeAnim = { from: shownOvershoot, to: 0, t0: performance.now(), dur: 2400 };
+        setTimeout(() => {
+          timeLimitLocked = false;
+          refreshTimeUI();
+        }, 2500);
+      }, 2350);
+
+      pressLockUntil = performance.now() + 7500;
     }
 
     // ---- 长按连续拨动 ----
@@ -4347,7 +4402,10 @@
       // 6. 脖颈
       px(ax - 1, ay - 32, 3, 2, '#eec3a6');
 
-      // 7. 脸庞
+      // 7. 脸庞（无奈叹气时微微摇头偏移）
+      const headSway = alva.sighTimer > 0 ? Math.round(Math.sin(alva.sighTimer * 0.32)) : 0;
+      ctx.save();
+      ctx.translate(headSway, alva.sighTimer > 0 ? 1 : 0);
       px(ax - 4, ay - 39, 9, 8, '#fbe0cd');
       px(ax - 3, ay - 32, 7, 1, '#f3d2bd');
       // 浅浅红晕
@@ -4382,6 +4440,7 @@
       px(ax - 6, ay - 33, 2, 5, '#b3b9c3');
       px(ax - 5, ay - 28, 2, 4, '#9aa1ac');
       px(ax - 5, ay - 24, 1, 3, '#868d99');
+      ctx.restore();
 
       // 头顶名牌标识
       ctx.font = '8px monospace';
@@ -4395,21 +4454,39 @@
       ctx.fillStyle = '#f2e3c8';
       ctx.fillText('阿尔瓦', ax, ly);
 
-      // 头顶感叹号特效（发现赫尔曼倒下时）
+      // 头顶感叹号特效（惊讶状态）
       if (alva.exclamationTimer > 0) {
-        const age = Math.max(0, 50 - alva.exclamationTimer);
-        const ey = ay - 48 + breathe - Math.min(6, age * 0.8);
+        const age = Math.max(0, 55 - alva.exclamationTimer);
+        const ey = ay - 50 + breathe - Math.min(5, age * 0.7);
         // 感叹号气泡与像素符号：黄白明亮带黑描边
         px(ax - 2, ey - 9, 5, 1, '#1a1a1a');
         px(ax - 3, ey - 8, 7, 7, '#1a1a1a');
         px(ax - 2, ey - 1, 5, 1, '#1a1a1a');
-        // 感叹号黄色底色
         px(ax - 2, ey - 8, 5, 7, '#ffcc00');
-        // 感叹号红色叹号本体
         px(ax - 1, ey - 7, 3, 3, '#ff2d55');
         px(ax, ey - 4, 1, 1, '#ff2d55');
         px(ax, ey - 2, 1, 1, '#ff2d55');
         alva.exclamationTimer--;
+      }
+
+      // 头顶无奈叹气特效（『…💧』省略号气泡 + 冰蓝小汗滴）
+      if (alva.sighTimer > 0) {
+        const ey = ay - 50 + breathe + Math.sin(alva.sighTimer * 0.25) * 0.8;
+        // 圆角白底气泡
+        px(ax - 6, ey - 8, 13, 1, '#2b2320');
+        px(ax - 7, ey - 7, 15, 6, '#2b2320');
+        px(ax - 6, ey - 1, 13, 1, '#2b2320');
+        px(ax - 6, ey - 7, 13, 6, '#fffaf0');
+        // 三个依次浮现的小黑点「…」
+        const stepDots = Math.min(3, Math.floor((85 - alva.sighTimer) / 10) + 1);
+        if (stepDots >= 1) px(ax - 4, ey - 4, 1, 1, '#3d312a');
+        if (stepDots >= 2) px(ax - 1, ey - 4, 1, 1, '#3d312a');
+        if (stepDots >= 3) px(ax + 2, ey - 4, 1, 1, '#3d312a');
+        // 右侧挂一滴冰蓝色无奈小汗珠
+        const dropOffset = Math.min(2, Math.floor((85 - alva.sighTimer) / 22));
+        px(ax + 5, ey - 6 + dropOffset, 1, 1, '#bae6fd');
+        px(ax + 4, ey - 5 + dropOffset, 2, 2, '#38bdf8');
+        alva.sighTimer--;
       }
 
       // 爱心互动特效
