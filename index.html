@@ -3848,16 +3848,16 @@
         }
       } else if (sea.key === 'autumn' && sea.phase === 2) {
         // 深秋：老梧桐树根旁结了一窝圆滚滚的南瓜，藤蔓爬过石阶
-        // 蜿蜒翠绿的南瓜藤蔓与阔叶
-        for (let i = 0; i < 13; i++) px(222 + i * 6, 130 + (i % 3) * 2, 5, 1, dm('#4e7d38'));
-        px(218, 128, 4, 2, dm('#588c3e'));
-        px(248, 124, 5, 2, dm('#5e9440'));
-        px(282, 125, 5, 2, dm('#4e7d38'));
-        // 四只饱满圆润的大南瓜：最大的主瓜摆在长椅与树根之间最显眼的位置
-        drawPixelPumpkin(256, 121, 'lg', dm);
-        drawPixelPumpkin(198, 123, 'md', dm);
-        drawPixelPumpkin(276, 126, 'sm', dm);
-        drawPixelPumpkin(290, 123, 'md', dm);
+        // 蜿蜒翠绿的南瓜藤蔓与阔叶（沿着树根与地平线边缘蔓延）
+        for (let i = 0; i < 12; i++) px(228 + i * 6, 124 + (i % 3) * 2, 5, 1, dm('#4e7d38'));
+        px(224, 122, 4, 2, dm('#588c3e'));
+        px(254, 118, 5, 2, dm('#5e9440'));
+        px(288, 119, 5, 2, dm('#4e7d38'));
+        // 四只饱满圆润的大南瓜：往右上挪 5~6 格，上半截明显高出 y=118 的石阶地平线
+        drawPixelPumpkin(262, 115, 'lg', dm);
+        drawPixelPumpkin(203, 117, 'md', dm);
+        drawPixelPumpkin(282, 120, 'sm', dm);
+        drawPixelPumpkin(295, 117, 'md', dm);
         // 几片散落的枯叶压在南瓜旁
         px(228, 132, 3, 1, dm('#a9552a'));
         px(284, 133, 3, 1, dm('#c9743a'));
@@ -5506,10 +5506,11 @@ let catAction = 'idle';
         check: () => hermanHitTotal >= 2000,
         progress: () => `${Math.min(hermanHitTotal, 2000)}/2000爪`
       },
-      // ===== 🍂 四季十二节气与雪地脚印系列 =====
+      // ===== 🍂 四季十二节气与雪地脚印系列（全部设为隐藏成就，手帐不显示获取条件） =====
       {
         id: 'season_4',
         icon: '🌿',
+        hidden: true,
         name: '四季巡礼',
         desc: '在莱顿运河畔亲眼走过春、夏、秋、冬四个季节',
         reward: '称号：走过四季的小猫',
@@ -5519,6 +5520,7 @@ let catAction = 'idle';
       {
         id: 'phase_12',
         icon: '🗓️',
+        hidden: true,
         name: '十二节气物语',
         desc: '见证一年全部 12 个节气阶段（初春残雪、仲夏浓荫、秋末南瓜、仲冬冰棱…）',
         reward: '称号：莱顿运河岁时记',
@@ -5529,15 +5531,16 @@ let catAction = 'idle';
         id: 'autumn_pumpkin',
         icon: '🎃',
         hidden: true,
-        name: '树根下的大南瓜',
-        desc: '在「秋·秋末」走到老梧桐树根旁，按下「🌿 探头看看」闻一闻阿尔瓦最喜欢的南瓜',
-        reward: '获得：阿尔瓦的烤南瓜华夫饼 (+5🐟)',
+        name: '阿尔瓦的南瓜饼',
+        desc: '在深秋的老梧桐树根旁找到了那只圆滚滚的大南瓜——那正是阿尔瓦最喜欢的南瓜饼的原料',
+        reward: '获得：阿尔瓦最喜欢的南瓜饼 (+5🐟)',
         check: () => pumpkinSniffFlag,
         progress: () => `${pumpkinSniffFlag ? 1 : 0}/1`
       },
       {
         id: 'snow_paw_60',
         icon: '❄️',
+        hidden: true,
         name: '踏雪寻梅',
         desc: '在冬日积雪的堤岸上漫步，累计踩出 60 个清晰的雪地小脚印',
         reward: '称号：雪地小梅花',
@@ -5547,6 +5550,7 @@ let catAction = 'idle';
       {
         id: 'snow_paw_300',
         icon: '⛄',
+        hidden: true,
         name: '雪岸巡逻官',
         desc: '累计在冬雪上留下 300 个小猫脚印，整条运河石阶都印满了你的梅花章',
         reward: '称号：莱顿冬日巡河喵',
@@ -5629,7 +5633,7 @@ let catAction = 'idle';
         const veiled = ach.hidden && !isUnlocked;
         const shownName = veiled ? '？？？' : ach.name;
         const shownIcon = veiled ? '❔' : ach.icon;
-        const shownDesc = veiled ? '隐藏成就 · 用某种特别的方式拨动时间才会揭晓' : ach.desc;
+        const shownDesc = veiled ? '隐藏成就 · 在运河畔漫步探索时偶然揭晓' : ach.desc;
         const shownReward = veiled ? '？？？' : ach.reward;
         const shownStatus = isUnlocked ? '已达成 ✓' : (veiled ? '？？？' : ach.progress());
 
@@ -6015,11 +6019,11 @@ let catAction = 'idle';
         if (!pumpkinSniffFlag) {
           pumpkinSniffFlag = true;
           try { localStorage.setItem('cat_pumpkin_sniff', '1'); } catch (e) {}
-          gainFish(5, '发现了树根旁妈妈最喜欢的大南瓜');
+          gainFish(5, '发现了树根旁做阿尔瓦最喜欢的南瓜饼的大南瓜');
         }
         alva.heartTimer = 30;
         checkAchievements();
-        showDialog('小猫凑到老梧桐树根旁，粉鼻头贴着那只圆滚滚的大南瓜嗅了嗅。阿尔瓦眉眼弯弯地走近：『这只长得最圆，等周末给你烤南瓜华夫饼，好不好？』🎃');
+        showDialog('小猫凑到老梧桐树根旁，粉鼻头贴着那只圆滚滚的大南瓜嗅了嗅。阿尔瓦眉眼弯弯地走近：『这只长得最甜，正好拿来做我最喜欢的南瓜饼，也分你一半，好不好？』🎃');
         return;
       }
       if (distAlva < 38) {
