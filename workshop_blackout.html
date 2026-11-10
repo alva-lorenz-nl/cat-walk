@@ -122,7 +122,7 @@
 <div class="wrap">
   <div class="topbar">
     <div class="lamp"><span class="bulb"></span><span>莱顿工坊 · 23:47</span></div>
-    <div class="clues">线索 <span id="clueCount">0</span>/3</div>
+    <div class="clues">线索 <span id="clueCount">0</span>/<span id="clueTotal">4</span></div>
   </div>
 
   <div class="card">
@@ -150,6 +150,7 @@
 })();
 
 /* ---------- 状态 ---------- */
+const CLUE_TOTAL = 4;
 const state = { clues:new Set(), visited:new Set(), north:{coffee:false,probe:false}, south:{verdict:false}, wrong:0 };
 
 const P = (t,cls='') => `<p class="${cls}">${t}</p>`;
@@ -296,7 +297,7 @@ const scenes = {
   east:{
     kicker:'ROOM 03', title:'东屋 · 老电炉',
     body:()=>{
-      const full = state.clues.size >= 3;
+      const full = state.clues.size >= CLUE_TOTAL;
       const arr=[
         P('东屋最安静。那台老电炉已经凉透了，铁皮上还留着白天的余温痕迹。'),
         P('可炉台上端端正正摆着一只小铁盒。盖子没锁，一掀就开——'),
@@ -311,7 +312,7 @@ const scenes = {
       return arr;
     },
     choices:()=>{
-      const full = state.clues.size >= 3;
+      const full = state.clues.size >= CLUE_TOTAL;
       return [
         {label: full ? '把夜灯点亮' : '先把夜灯点亮再说', to: full ? 'end_full' : 'end_short'},
         {label:'回走廊，再查查别的地方', to:'start', ghost:true}
@@ -324,7 +325,7 @@ const scenes = {
     body:()=>[
       P('你按下小夜灯底部的开关。'),
       P('猫形的灯罩里透出一点暖黄的光，落在铁皮炉台上，也落在你手背上。工坊还是黑着，可这方寸之间忽然有了温度。'),
-      P('三个线索拼在一起：假亮的屏幕、被顶开的开关、那根弯成钩的铜丝。'),
+      P('四条线索拼在一起：假亮的屏幕、被拔下来的探头、被顶开的开关、还有那根弯成钩的铜丝。'),
       P('有人先关了灯，摸黑走进北屋拔掉探头，又回到配电箱丢下铜丝——绕这么大一圈，只为了让你在黑漆漆的工坊里，一步一步把谜底走到东屋来。'),
       P('真是的。堂堂一个电气工程教授，做这种事还这么讲究工序。','q'),
       P('你把夜灯抱在怀里，回头看了一眼空荡荡的走廊。'),
@@ -358,9 +359,9 @@ const scenes = {
       const arr=[
         P('你抱着那盏猫形小夜灯，穿过黑着的走廊。'),
         P('身后的工坊安静下来，只有窗外的风还在绕着屋檐打转。'),
-        P('这一夜你收集了 ' + n + ' 条线索。' + (n>=3 ? '每一条都对得上，严丝合缝——像个工程师该有的样子。' : '不过有些角落，还留着没走完的路。'),'small')
+        P('这一夜你收集了 ' + n + ' 条线索。' + (n>=CLUE_TOTAL ? '每一条都对得上，严丝合缝——像个工程师该有的样子。' : '不过有些角落，还留着没走完的路。'),'small')
       ];
-      if(n>=3){
+      if(n>=CLUE_TOTAL){
         arr.push(P('还有，谢谢你还肯往下查。','q'));
       }
       return arr;
